@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Pet Tag</title>
+<style>
+:root{--bg:#f6f1ea;--card:#fffdf9;--ink:#2b2420;--muted:#7a6e66;--line:#e7ddd2;--accent:#d9653b;--accent-ink:#fff;--soft:#f3e7dc;--warn-bg:#fff1e6;--warn-line:#f2c3a3;--ok:#3f8a5a;--bad:#b3412e}
+@media (prefers-color-scheme:dark){:root{--bg:#1c1917;--card:#262220;--ink:#f3ece6;--muted:#a89c93;--line:#3a3431;--accent:#ee7a4f;--accent-ink:#1c1917;--soft:#332b27;--warn-bg:#3a2a20;--warn-line:#6b4430;--ok:#6cc08a;--bad:#ef7a66}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink)}
+body{font:16px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:460px;margin:0 auto;padding:28px 16px 56px}
+.hidden{display:none!important}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:14px}
+.label{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 4px}
+.big{font-size:22px;font-weight:700;margin:0}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+a{color:var(--accent)}
+.btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.btn{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--soft);color:var(--ink);font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+/* viewer */
+.hero{text-align:center;padding:12px 0 4px}
+.paw{width:76px;height:76px;margin:0 auto 12px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.paw svg{width:42px;height:42px}
+.hero h1{font-size:30px;line-height:1.15;margin:0 0 6px}
+.hero p{margin:0}
+.warn{background:var(--warn-bg);border-color:var(--warn-line)}
+.foot{text-align:center;margin-top:28px}
+/* creator */
+h1.title{font-size:26px;margin:0 0 6px}
+.note{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:14px;padding:12px 14px;font-size:14px;margin-top:14px}
+.field{margin-top:14px}
+.field label{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+.field .hint{font-weight:400;color:var(--muted)}
+input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:11px 12px}
+textarea{min-height:76px;resize:vertical}
+input:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.url{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;word-break:break-all;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:8px;max-height:140px;overflow:auto}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{font-size:13px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid var(--line)}
+.chip.fit{color:var(--ok);border-color:var(--ok)}
+.chip.nofit{color:var(--bad);border-color:var(--line);opacity:.75;text-decoration:line-through}
+.status{margin-top:10px;font-size:14px;min-height:1.5em}
+.err{color:var(--bad)}
+details summary{cursor:pointer;font-weight:600}
+.row{display:flex;gap:8px;margin-top:10px}
+.row input{flex:1}
+</style>
+</head>
+<body>
+<main>
+
+<!-- ============ PUBLIC PROFILE (when link has data) ============ -->
+<section id="viewer" class="hidden" aria-live="polite">
+  <div class="hero">
+    <div class="paw" aria-hidden="true"><svg viewBox="0 0 64 64"><g fill="currentColor"><ellipse cx="22" cy="18" rx="6" ry="8"/><ellipse cx="42" cy="18" rx="6" ry="8"/><ellipse cx="10" cy="32" rx="5.5" ry="7"/><ellipse cx="54" cy="32" rx="5.5" ry="7"/><path d="M32 29c-9 0-17 10-17 17 0 5 4 8 9 8 3 0 5-2 8-2s5 2 8 2c5 0 9-3 9-8 0-7-8-17-17-17z"/></g></svg></div>
+    <h1 id="v-title">Hi!</h1>
+    <p class="muted">If I'm lost, please contact my human.</p>
+    <p id="v-dob" class="muted small"></p>
+  </div>
+
+  <div id="v-owner-card" class="card">
+    <p class="label">My human</p>
+    <p id="v-owner" class="big"></p>
+    <p id="v-phone" class="muted"></p>
+    <div id="v-phone-btns" class="btns"></div>
+  </div>
+
+  <div id="v-cond-card" class="card warn">
+    <p class="label">Health notes</p>
+    <p id="v-cond" style="margin:0;white-space:pre-wrap"></p>
+  </div>
+
+  <div id="v-vet-card" class="card">
+    <p class="label">My vet</p>
+    <p id="v-vet" style="margin:0;font-weight:600"></p>
+    <div class="btns"><a id="v-vet-map" class="btn" target="_blank" rel="noopener noreferrer">Find on map</a></div>
+  </div>
+
+  <p class="foot small muted"><a id="v-make" href="#">Make a tag like this</a></p>
+</section>
+
+<!-- ============ ERROR ============ -->
+<section id="broken" class="hidden">
+  <div class="card warn">
+    <p class="big">This tag couldn't be read</p>
+    <p id="broken-msg" class="muted" style="margin-bottom:0"></p>
+  </div>
+</section>
+
+<!-- ============ OWNER FORM (no data in link) ============ -->
+<section id="creator" class="hidden">
+  <h1 class="title">Create your pet's tag</h1>
+  <p class="muted" style="margin:0">Fill in what you want a finder to see. Leave anything blank to keep it off the tag.</p>
+
+  <div class="note"><span aria-hidden="true">🔒</span><span>Nothing you type is sent or stored anywhere. The info is packed into the link itself, and the link only lives on your tag.</span></div>
+
+  <div id="local-warn" class="note warn hidden"><span aria-hidden="true">⚠️</span><span>You're opening this page as a local file. Host it online first (e.g. GitHub Pages), then make your links from the hosted page, otherwise the links will point to your computer.</span></div>
+
+  <form id="form" autocomplete="off" onsubmit="return false">
+    <div class="field"><label for="pet">Pet's name</label><input id="pet" maxlength="40" placeholder="Mochi"></div>
+    <div class="field"><label for="owner">Owner's name</label><input id="owner" maxlength="60" placeholder="Evan"></div>
+    <div class="field"><label for="phone">Contact number <span class="hint">· include country code for WhatsApp</span></label><input id="phone" type="tel" maxlength="24" placeholder="+65 9123 4567"></div>
+    <div class="field"><label for="dob">Pet's date of birth</label><input id="dob" type="date"></div>
+    <div class="field"><label for="vet">Vet clinic</label><input id="vet" maxlength="80" placeholder="Clinic name and area"></div>
+    <div class="field"><label for="cond">Underlying conditions <span class="hint">· keep it short</span></label><textarea id="cond" maxlength="300" placeholder="e.g. Diabetic, needs insulin twice daily. Allergic to chicken."></textarea></div>
+  </form>
+
+  <div class="card">
+    <p class="label">Your tag link</p>
+    <div id="url" class="url muted">Fill in the form to generate a link.</div>
+    <p class="small muted" style="margin:10px 0 0"><span id="bytes">0</span> bytes on the tag · fits:</p>
+    <div class="chips" id="chips"></div>
+    <div class="btns">
+      <button class="btn primary" id="copy" disabled>Copy link</button>
+      <button class="btn" id="preview" disabled>Preview</button>
+    </div>
+    <div class="btns hidden" id="nfc-row">
+      <button class="btn primary" id="write" disabled>Write to NFC tag</button>
+    </div>
+    <p id="status" class="status" role="status"></p>
+    <p id="nfc-help" class="small muted" style="margin:0">To write the tag, copy the link and use a free app like <b>NFC Tools</b> or <b>NXP TagWriter</b> (write a "URL" record). Lock the tag afterwards so nobody can overwrite it.</p>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>Edit an existing tag</summary>
+      <p class="small muted">Paste the link from your tag to load its details back into the form. Then write the new link to the tag.</p>
+      <div class="row"><input id="import" placeholder="Paste tag link"><button class="btn" id="load" style="flex:0 0 auto">Load</button></div>
+      <p id="import-status" class="status small"></p>
+    </details>
+  </div>
+</section>
+
+</main>
+<script>
+(() => {
+  "use strict";
+  const FIELDS = ["pet", "owner", "phone", "dob", "vet", "cond"];
+  const CHIPS = [["NTAG213", 144], ["NTAG215", 504], ["NTAG216", 888]];
+  const $ = id => document.getElementById(id);
+  const te = new TextEncoder(), td = new TextDecoder();
+  const canZip = typeof CompressionStream !== "undefined" && typeof DecompressionStream !== "undefined";
+  const BASE = location.href.split("#")[0];
+
+  // ---------- encoding ----------
+  const b64u = {
+    enc(bytes) { let s = ""; for (const b of bytes) s += String.fromCharCode(b); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); },
+    dec(str) { str = str.replace(/-/g, "+").replace(/_/g, "/"); while (str.length % 4) str += "="; const s = atob(str); return Uint8Array.from(s, c => c.charCodeAt(0)); }
+  };
+  async function pipe(bytes, stream) {
+    return new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(stream)).arrayBuffer());
+  }
+  const clean = s => String(s || "").replace(/[\u0000-\u0008\u000B-\u001F\u007F]/g, "").trim();
+
+  // values: [pet, owner, phone, dobYYYYMMDD, vet, cond]
+  async function encode(vals) {
+    vals = vals.map(clean);
+    while (vals.length && !vals[vals.length - 1]) vals.pop();
+    const raw = "r" + vals.map(v => encodeURIComponent(v).replace(/~/g, "%7E").replace(/%20/g, "+")).join("~");
+    if (!canZip) return raw;
+    const zipped = "z" + b64u.enc(await pipe(te.encode(vals.join("\x1f")), new CompressionStream("deflate-raw")));
+    return zipped.length < raw.length ? zipped : raw;
+  }
+  async function decode(hash) {
+    const kind = hash[0], body = hash.slice(1);
+    let vals;
+    if (kind === "r") vals = body.split("~").map(s => decodeURIComponent(s.replace(/\+/g, " ")));
+    else if (kind === "z") {
+      if (!canZip) throw new Error("This browser is too old to open this tag. Try another phone or update your browser.");
+      vals = td.decode(await pipe(b64u.dec(body), new DecompressionStream("deflate-raw"))).split("\x1f");
+    } else throw new Error("The link on this tag isn't in a recognised format.");
+    const o = {};
+    FIELDS.forEach((k, i) => o[k] = clean(vals[i]));
+    return o;
+  }
+
+  // ---------- helpers ----------
+  function parseDob(s) {
+    const m = /^(\d{4})(\d{2})(\d{2})$/.exec(s || "");
+    if (!m) return null;
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    return isNaN(d) ? null : d;
+  }
+  function ageText(d) {
+    const now = new Date();
+    let y = now.getFullYear() - d.getFullYear(), mo = now.getMonth() - d.getMonth();
+    if (now.getDate() < d.getDate()) mo--;
+    if (mo < 0) { y--; mo += 12; }
+    if (y < 0) return "";
+    if (y === 0) return mo <= 0 ? "under a month old" : `${mo} month${mo > 1 ? "s" : ""} old`;
+    return `${y} year${y > 1 ? "s" : ""}${mo ? ` ${mo} month${mo > 1 ? "s" : ""}` : ""} old`;
+  }
+  const telDigits = p => { const plus = p.trim().startsWith("+"); const d = p.replace(/\D/g, ""); return d ? (plus ? "+" : "") + d : ""; };
+  function ndefBytes(url) {
+    const pre = ["https://www.", "http://www.", "https://", "http://"].find(p => url.startsWith(p));
+    const payload = te.encode(pre ? url.slice(pre.length) : url).length + 1;
+    const record = payload + (payload > 255 ? 7 : 4);
+    return record + (record >= 255 ? 4 : 2) + 1;
+  }
+  function btn(label, href, primary) {
+    const a = document.createElement("a");
+    a.className = "btn" + (primary ? " primary" : "");
+    a.textContent = label; a.href = href; a.rel = "noopener noreferrer";
+    return a;
+  }
+
+  // ---------- viewer ----------
+  function showViewer(d) {
+    document.title = d.pet ? `${d.pet} · Pet Tag` : "Pet Tag";
+    $("v-title").textContent = d.pet ? `Hi, I'm ${d.pet}!` : "Hi!";
+    const dob = parseDob(d.dob);
+    $("v-dob").textContent = dob ? `Born ${dob.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })} · ${ageText(dob)}` : "";
+
+    const tel = telDigits(d.phone);
+    $("v-owner").textContent = d.owner || "My owner";
+    $("v-phone").textContent = d.phone;
+    const pb = $("v-phone-btns"); pb.replaceChildren();
+    if (tel) {
+      pb.append(btn("Call", "tel:" + tel, true));
+      if (tel.startsWith("+")) {
+        const msg = encodeURIComponent(`Hi, I found ${d.pet || "your pet"}!`);
+        pb.append(btn("WhatsApp", `https://wa.me/${tel.slice(1)}?text=${msg}`));
+      }
+      pb.append(btn("Text", "sms:" + tel));
+    }
+    $("v-owner-card").classList.toggle("hidden", !d.owner && !tel);
+
+    $("v-cond").textContent = d.cond;
+    $("v-cond-card").classList.toggle("hidden", !d.cond);
+
+    $("v-vet").textContent = d.vet;
+    $("v-vet-map").href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(d.vet);
+    $("v-vet-card").classList.toggle("hidden", !d.vet);
+
+    $("v-make").href = BASE;
+    $("viewer").classList.remove("hidden");
+  }
+
+  // ---------- creator ----------
+  let currentUrl = "";
+  function readForm() {
+    return FIELDS.map(k => k === "dob" ? $("dob").value.replace(/-/g, "") : $(k).value);
+  }
+  function fillForm(d) {
+    FIELDS.forEach(k => {
+      if (k === "dob") { const m = /^(\d{4})(\d{2})(\d{2})$/.exec(d.dob || ""); $("dob").value = m ? `${m[1]}-${m[2]}-${m[3]}` : ""; }
+      else $(k).value = d[k] || "";
+    });
+  }
+  let seq = 0;
+  async function regenerate() {
+    const my = ++seq;
+    const vals = readForm();
+    const empty = vals.every(v => !clean(v));
+    if (empty) {
+      currentUrl = "";
+      $("url").textContent = "Fill in the form to generate a link."; $("url").classList.add("muted");
+      $("bytes").textContent = "0"; renderChips(0);
+      ["copy", "preview", "write"].forEach(id => $(id).disabled = true);
+      return;
+    }
+    const hash = await encode(vals);
+    if (my !== seq) return;
+    currentUrl = BASE + "#" + hash;
+    const n = ndefBytes(currentUrl);
+    $("url").textContent = currentUrl; $("url").classList.remove("muted");
+    $("bytes").textContent = n; renderChips(n);
+    ["copy", "preview", "write"].forEach(id => $(id).disabled = false);
+  }
+  function renderChips(n) {
+    const c = $("chips"); c.replaceChildren();
+    CHIPS.forEach(([name, cap]) => {
+      const s = document.createElement("span");
+      const fit = n === 0 || n <= cap;
+      s.className = "chip " + (fit ? "fit" : "nofit");
+      s.textContent = name;
+      s.title = `${cap} bytes`;
+      c.append(s);
+    });
+    const tooBig = n > CHIPS[CHIPS.length - 1][1];
+    setStatus(tooBig ? "Too long for any NTAG chip, so shorten the health notes or vet name." : "", tooBig);
+  }
+  function setStatus(msg, isErr) { const s = $("status"); s.textContent = msg; s.classList.toggle("err", !!isErr); }
+
+  function initCreator() {
+    if (location.protocol === "file:") $("local-warn").classList.remove("hidden");
+    let t;
+    $("form").addEventListener("input", () => { clearTimeout(t); t = setTimeout(regenerate, 120); });
+    $("copy").onclick = async () => {
+      try { await navigator.clipboard.writeText(currentUrl); setStatus("Link copied. Paste it into your NFC writing app."); }
+      catch { const r = document.createRange(); r.selectNodeContents($("url")); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); setStatus("Couldn't copy automatically, so the link is selected. Copy it manually."); }
+    };
+    $("preview").onclick = () => window.open(currentUrl, "_blank", "noopener");
+
+    if ("NDEFReader" in window) {
+      $("nfc-row").classList.remove("hidden");
+      $("nfc-help").textContent = "On this phone you can write the tag directly. Tap the button, then hold the tag to the back of your phone. Lock the tag afterwards (e.g. in NFC Tools) so nobody can overwrite it.";
+      $("write").onclick = async () => {
+        try {
+          setStatus("Hold the tag to the back of your phone…");
+          const ndef = new NDEFReader();
+          await ndef.write({ records: [{ recordType: "url", data: currentUrl }] });
+          setStatus("✓ Written to the tag. Tap it to test!");
+        } catch (e) { setStatus("Couldn't write: " + (e && e.message ? e.message : e), true); }
+      };
+    }
+
+    $("load").onclick = async () => {
+      const v = $("import").value.trim(), i = v.indexOf("#");
+      const st = $("import-status");
+      try {
+        if (i < 0 || i === v.length - 1) throw new Error("That link has no pet info in it.");
+        fillForm(await decode(v.slice(i + 1)));
+        st.textContent = "Loaded. Make your changes, then write the new link."; st.classList.remove("err");
+        regenerate();
+      } catch (e) { st.textContent = e.message; st.classList.add("err"); }
+    };
+
+    renderChips(0);
+    $("creator").classList.remove("hidden");
+  }
+
+  // ---------- route ----------
+  const hash = location.hash.slice(1);
+  if (hash) {
+    decode(hash).then(showViewer).catch(e => {
+      $("broken-msg").textContent = e.message || "The link looks damaged.";
+      $("broken").classList.remove("hidden");
+    });
+  } else initCreator();
+})();
+</script>
+</body>
+</html>
