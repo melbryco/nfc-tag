@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Tag Page Editor</title>
+<style>
+:root{--bg:#f4f2ef;--panel:#fff;--ink:#23201d;--muted:#746c65;--line:#e2ddd7;--soft:#f1ece6;--accent:#d9653b;--accent-ink:#fff;--focus:#d9653b;--danger:#b3412e;--ok:#3f8a5a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#161412;--panel:#211e1b;--ink:#efe9e3;--muted:#a49a91;--line:#37322e;--soft:#2b2723;--accent:#ee7a4f;--accent-ink:#1c1917;--focus:#ee7a4f;--danger:#ef7a66;--ok:#6cc08a;color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink)}
+body{font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+button,input,select,textarea{font:inherit;color:inherit}
+.hidden{display:none!important}
+/* top bar */
+header{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+header h1{font-size:16px;margin:0 auto 0 0;display:flex;align-items:center;gap:8px}
+header h1 .dot{width:22px;height:22px;border-radius:50%;background:var(--accent)}
+#saved{font-size:12px;color:var(--muted)}
+.b{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--soft);cursor:pointer;font-weight:600;white-space:nowrap;text-decoration:none;color:var(--ink)}
+.b:hover{border-color:var(--muted)}
+.b.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.b.ghost{background:transparent;border-color:transparent}
+.b.ghost:hover{background:var(--soft)}
+.b.danger{color:var(--danger)}
+.b.sm{min-height:28px;padding:3px 8px;font-size:13px}
+.b:disabled{opacity:.4;cursor:default}
+.b:focus-visible,.seg button:focus-visible,summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+/* layout */
+.wrap{flex:1;display:grid;grid-template-columns:minmax(340px,520px) 1fr;min-height:0}
+.side{overflow:auto;border-right:1px solid var(--line);background:var(--bg)}
+.stage{display:flex;flex-direction:column;align-items:center;gap:12px;padding:16px;overflow:auto;min-height:0}
+.tabs{display:flex;gap:4px;padding:10px 16px 0;position:sticky;top:0;background:var(--bg);z-index:3;border-bottom:1px solid var(--line)}
+.tabs button{border:0;background:none;padding:9px 12px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer}
+.tabs button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--accent)}
+.pane{padding:14px 16px 80px}
+.mobile-switch{display:none}
+@media (max-width:860px){
+  .wrap{grid-template-columns:1fr}
+  .side,.stage{grid-area:1/1}
+  body[data-view=preview] .side{display:none}
+  body[data-view=edit] .stage{display:none}
+  .mobile-switch{display:flex}
+  .stage{padding:12px 0}
+  header{padding:8px 12px;gap:6px}
+  header h1{font-size:15px;flex-basis:100%}
+  #saved{display:none}
+  .b .lbl{display:none}
+  .tabs{padding:6px 8px 0;gap:0}
+  .tabs button{padding:8px 8px;font-size:13px;flex:1}
+  .pane{padding:12px 12px 80px}
+}
+/* preview */
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{border:0;background:none;padding:6px 12px;cursor:pointer;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed=true]{background:var(--soft);color:var(--ink)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.phone{width:min(400px,100%);flex:1;min-height:560px;border:1px solid var(--line);border-radius:28px;overflow:hidden;background:var(--panel);box-shadow:0 10px 40px rgba(0,0,0,.08)}
+@media (max-width:860px){.phone{border-radius:0;border-left:0;border-right:0;width:100%}}
+.phone iframe{width:100%;height:100%;border:0;display:block}
+/* sections */
+.sec{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.sec h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 10px}
+.help{color:var(--muted);font-size:13px;margin:4px 0 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{display:flex;flex-direction:column;gap:4px;margin-top:10px;min-width:0}
+.f>span{font-weight:600;font-size:13px}
+.f>span small{font-weight:400;color:var(--muted)}
+.f input:not([type=checkbox]):not([type=color]):not([type=range]),.f select,.f textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px}
+.f textarea{min-height:60px;resize:vertical}
+.f input:focus,.f select:focus,.f textarea:focus{outline:2px solid var(--focus);outline-offset:0;border-color:transparent}
+.chk{display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:600;font-size:13px;cursor:pointer}
+.chk input{width:16px;height:16px;accent-color:var(--accent)}
+.range{display:flex;align-items:center;gap:8px}
+.range input{flex:1;accent-color:var(--accent)}
+.range output{min-width:44px;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.ins{display:flex;flex-wrap:wrap;gap:4px;margin-top:2px}
+.ins button{border:1px dashed var(--line);background:none;border-radius:6px;padding:1px 6px;font:12px ui-monospace,Menlo,Consolas,monospace;cursor:pointer;color:var(--muted)}
+.ins button:hover{color:var(--ink);border-color:var(--muted)}
+/* block list */
+.blk{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:8px}
+.blk.open{border-color:var(--muted)}
+.blk.flash{animation:flash 1s}
+@keyframes flash{from{box-shadow:0 0 0 3px var(--accent)}to{box-shadow:0 0 0 3px transparent}}
+.bh{display:flex;align-items:center;gap:8px;padding:6px 6px 6px 10px}
+.bh .tog{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:none;border:0;text-align:left;padding:4px 0;cursor:pointer}
+.ic{flex:0 0 28px;height:28px;border-radius:8px;background:var(--soft);display:grid;place-items:center;font-size:14px}
+.bt{min-width:0}
+.bt b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.bt small{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bb{padding:0 12px 14px;border-top:1px solid var(--line)}
+.tagx{font-size:11px;font-weight:700;padding:1px 6px;border-radius:999px;background:var(--soft);color:var(--muted);margin-left:4px;vertical-align:1px}
+.add{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px;margin-top:8px}
+.add button{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px dashed var(--line);background:var(--panel);border-radius:10px;cursor:pointer;font-weight:600;text-align:left}
+.add button:hover{border-color:var(--accent)}
+.note{font-size:12px;color:var(--muted);background:var(--soft);border-radius:8px;padding:8px 10px;margin-top:12px}
+.note.warn{color:var(--ink);background:color-mix(in srgb,var(--accent) 14%,transparent)}
+/* theme */
+.presets{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+.preset{border:1px solid var(--line);border-radius:10px;padding:6px;cursor:pointer;background:var(--panel);text-align:center;font-size:12px;font-weight:600}
+.preset[aria-pressed=true]{outline:2px solid var(--accent)}
+.sw{display:flex;height:26px;border-radius:6px;overflow:hidden;margin-bottom:4px}
+.sw i{flex:1}
+.colors{display:grid;grid-template-columns:1fr 1fr;gap:6px 12px}
+.col{display:flex;align-items:center;gap:8px;margin-top:6px;font-size:13px}
+.col input[type=color]{width:34px;height:30px;border:1px solid var(--line);border-radius:8px;padding:2px;background:var(--bg);cursor:pointer;flex:0 0 auto}
+.col input[type=text]{width:84px;flex:0 0 auto;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:5px 7px;font:12px ui-monospace,Menlo,Consolas,monospace}
+.col span{flex:1;min-width:0}
+.thumb{display:flex;align-items:center;gap:10px;margin-top:8px}
+.thumb img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:var(--soft)}
+/* dialog */
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--panel);color:var(--ink);padding:18px;width:min(520px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 6px}
+.dlg-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+#toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10;max-width:calc(100vw - 32px)}
+#toast.show{opacity:1}
+ol.steps{margin:8px 0 0;padding-left:20px}
+ol.steps li{margin-top:4px}
+code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padding:1px 4px;border-radius:4px}
+</style>
+</head>
+<body data-view="edit">
+<header>
+  <h1><span class="dot" aria-hidden="true"></span>Tag page editor</h1>
+  <span id="saved"></span>
+  <button class="b ghost" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶<span class="lbl"> Undo</span></button>
+  <button class="b ghost" id="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷<span class="lbl"> Redo</span></button>
+  <button class="b primary" id="save-open" style="margin-left:auto">Save &amp; publish</button>
+  <div class="seg mobile-switch" role="group" aria-label="View">
+    <button data-view="edit" aria-pressed="true">Edit</button>
+    <button data-view="preview" aria-pressed="false">Preview</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <aside class="side">
+    <div class="tabs" role="tablist">
+      <button role="tab" data-tab="content" aria-selected="true">Content &amp; inputs</button>
+      <button role="tab" data-tab="style" aria-selected="false">Colours &amp; background</button>
+      <button role="tab" data-tab="form" aria-selected="false">Owner form</button>
+    </div>
+
+    <div class="pane" data-pane="content">
+      <div id="draft-note" class="note warn hidden" style="margin:0 0 12px">Restored your unsaved changes from last time. <button class="b sm" id="discard">Discard and reload the live page</button></div>
+      <p class="help" style="margin:0 0 10px">This is everything a finder sees, top to bottom. <b>Inputs</b> also become the questions on the owner form, in the same order. Click a row to edit it.</p>
+      <div id="blocks"></div>
+      <div class="sec" style="margin-top:14px">
+        <h2>Add to the page</h2>
+        <div class="add" id="add"></div>
+      </div>
+      <div class="sec">
+        <h2>Footer link</h2>
+        <div id="footer-ctl"></div>
+      </div>
+    </div>
+
+    <div class="pane hidden" data-pane="style">
+      <div class="sec"><h2>Theme presets</h2><div class="presets" id="presets"></div></div>
+      <div class="sec">
+        <h2>Colours</h2>
+        <div class="seg" role="group" aria-label="Palette" id="pal-seg">
+          <button data-pal="light" aria-pressed="true">Light mode</button>
+          <button data-pal="dark" aria-pressed="false">Dark mode</button>
+        </div>
+        <div id="colors"></div>
+        <div id="autodark"></div>
+      </div>
+      <div class="sec"><h2>Background</h2><div id="bg-ctl"></div></div>
+      <div class="sec"><h2>Text &amp; shape</h2><div id="type-ctl"></div></div>
+    </div>
+
+    <div class="pane hidden" data-pane="form">
+      <div class="sec">
+        <h2>Owner form page</h2>
+        <p class="help" style="margin:0">This is the page you see when you open the site without a tag link. The questions on it come from the <b>Input</b> rows on the Content tab.</p>
+        <div id="creator-ctl"></div>
+      </div>
+      <div class="sec"><h2>Browser tab title</h2><div id="page-ctl"></div></div>
+    </div>
+  </aside>
+
+  <section class="stage">
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Which page">
+        <button data-mode="viewer" aria-pressed="true">Finder's view</button>
+        <button data-mode="creator" aria-pressed="false">Owner form</button>
+      </div>
+      <div class="seg" role="group" aria-label="Colour scheme">
+        <button data-scheme="light" aria-pressed="true">☀︎ Light</button>
+        <button data-scheme="dark" aria-pressed="false">☾ Dark</button>
+      </div>
+    </div>
+    <div class="phone"><iframe id="frame" title="Live preview"></iframe></div>
+    <p class="help" id="frame-help" style="text-align:center;max-width:400px">The finder's view uses each input's <b>sample answer</b>, so you can see what a real tag looks like.</p>
+  </section>
+</div>
+
+<!-- save dialog -->
+<dialog id="save-dlg">
+  <h3>Save your design</h3>
+  <p class="help" style="margin-top:0">The page reads its design from <code>config.json</code>, sitting next to <code>index.html</code>. Tags you've already written keep working.</p>
+
+  <div class="sec" style="margin-top:12px">
+    <h2>Option 1 · Download and upload</h2>
+    <ol class="steps">
+      <li>Download <code>config.json</code>.</li>
+      <li>In your GitHub repository, choose <b>Add file → Upload files</b> and drop it in (it replaces the old one), then commit.</li>
+      <li>GitHub Pages updates in about a minute.</li>
+    </ol>
+    <div class="dlg-btns" style="justify-content:flex-start">
+      <button class="b primary" id="download">Download config.json</button>
+      <button class="b" id="copy-json">Copy as text</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Option 2 · Publish straight to GitHub</h2>
+    <p class="help" style="margin-top:0">Needs a fine-grained <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">personal access token</a> with <b>Contents: read and write</b> on this repository only. It's sent only to api.github.com.</p>
+    <div class="grid2">
+      <label class="f"><span>Owner</span><input id="gh-owner" placeholder="your-username"></label>
+      <label class="f"><span>Repository</span><input id="gh-repo" placeholder="nfc-tag"></label>
+      <label class="f"><span>Branch</span><input id="gh-branch" placeholder="main"></label>
+      <label class="f"><span>File path</span><input id="gh-path" placeholder="config.json"></label>
+    </div>
+    <label class="f"><span>Token</span><input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…"></label>
+    <label class="chk"><input type="checkbox" id="gh-remember"> Remember the token on this device</label>
+    <p id="gh-status" class="help" role="status"></p>
+    <div class="dlg-btns" style="justify-content:flex-start"><button class="b primary" id="gh-publish">Publish to GitHub</button></div>
+  </div>
+
+  <div class="sec">
+    <h2>Other</h2>
+    <div class="dlg-btns" style="justify-content:flex-start;margin-top:0">
+      <label class="b">Open a config.json…<input type="file" id="import-file" accept=".json,application/json" hidden></label>
+      <button class="b danger" id="reset">Reset to the original design</button>
+    </div>
+  </div>
+  <div class="dlg-btns"><button class="b" id="save-close">Close</button></div>
+</dialog>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const DRAFT_KEY = "tagEditor.draft.v1", GH_KEY = "tagEditor.github.v1";
+  const store = {
+    get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
+    del(k) { try { localStorage.removeItem(k); } catch { } }
+  };
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const isObj = v => v && typeof v === "object" && !Array.isArray(v);
+  const merge = (base, over) => {
+    const out = clone(base);
+    if (isObj(over)) for (const k of Object.keys(over)) out[k] = isObj(base[k]) && isObj(over[k]) ? merge(base[k], over[k]) : over[k];
+    return out;
+  };
+  const uid = () => "b" + Math.random().toString(36).slice(2, 9);
+
+  let DEFAULTS = null, LIVE = null, cfg = null;
+  const ui = { open: new Set(), mode: "viewer", scheme: "light", pal: "light", tab: "content" };
+
+  // ---------------- catalogue ----------------
+  const BLOCKS = {
+    field: { icon: "✎", name: "Input", desc: "A question on the owner form, shown to finders" },
+    heading: { icon: "H", name: "Heading", desc: "Big title text" },
+    text: { icon: "¶", name: "Text", desc: "Subtext, a note or a card" },
+    image: { icon: "🖼", name: "Image", desc: "A photo or picture" },
+    badge: { icon: "🐾", name: "Icon badge", desc: "Round icon or emoji" },
+    divider: { icon: "—", name: "Divider", desc: "A thin line" },
+    spacer: { icon: "↕", name: "Spacer", desc: "Empty space" }
+  };
+  const INPUTS = [
+    ["text", "Short text"], ["textarea", "Long text (paragraph)"], ["number", "Number"], ["date", "Date"],
+    ["tel", "Phone number"], ["email", "Email"], ["url", "Website link"], ["select", "Dropdown (pick one)"]
+  ];
+  const INPUT_NAME = Object.fromEntries(INPUTS);
+  const ALIGN = [["left", "Left"], ["center", "Centre"], ["right", "Right"]];
+  const PRESETS = {
+    warm: { name: "Warm", light: { bg: "#f6f1ea", bg2: "#efe4d6", card: "#fffdf9", ink: "#2b2420", muted: "#7a6e66", line: "#e7ddd2", accent: "#d9653b", accentInk: "#ffffff", soft: "#f3e7dc", warnBg: "#fff1e6", warnLine: "#f2c3a3" }, dark: { bg: "#1c1917", bg2: "#2a211c", card: "#262220", ink: "#f3ece6", muted: "#a89c93", line: "#3a3431", accent: "#ee7a4f", accentInk: "#1c1917", soft: "#332b27", warnBg: "#3a2a20", warnLine: "#6b4430" } },
+    ocean: { name: "Ocean", light: { bg: "#eef4f8", bg2: "#dceaf3", card: "#ffffff", ink: "#16232e", muted: "#5d7080", line: "#d6e2ea", accent: "#1f6fb2", accentInk: "#ffffff", soft: "#e3eef6", warnBg: "#fff4e5", warnLine: "#f1cf9b" }, dark: { bg: "#0f1820", bg2: "#132433", card: "#17232e", ink: "#e6eef4", muted: "#93a6b5", line: "#2a3a47", accent: "#5aa9ea", accentInk: "#0f1820", soft: "#1e2e3b", warnBg: "#33291b", warnLine: "#6a5230" } },
+    forest: { name: "Forest", light: { bg: "#f0f4ee", bg2: "#e0eadb", card: "#ffffff", ink: "#1f2a1e", muted: "#64705f", line: "#dbe3d6", accent: "#3f7d4f", accentInk: "#ffffff", soft: "#e5ede1", warnBg: "#fdf1e4", warnLine: "#ecc9a0" }, dark: { bg: "#131913", bg2: "#1a261b", card: "#1b231b", ink: "#e7efe5", muted: "#9aa996", line: "#2e3a2d", accent: "#78c08a", accentInk: "#131913", soft: "#243024", warnBg: "#352a1d", warnLine: "#6b5232" } },
+    berry: { name: "Berry", light: { bg: "#f8f0f5", bg2: "#efdcea", card: "#ffffff", ink: "#2c1b26", muted: "#7a6371", line: "#ecdbe5", accent: "#b23a7a", accentInk: "#ffffff", soft: "#f3e3ed", warnBg: "#fff1e6", warnLine: "#f2c3a3" }, dark: { bg: "#1b1218", bg2: "#2b1a25", card: "#251a21", ink: "#f4e8ef", muted: "#b49aa9", line: "#3d2c36", accent: "#ec7ab5", accentInk: "#1b1218", soft: "#32232c", warnBg: "#3a2a20", warnLine: "#6b4430" } },
+    sunny: { name: "Sunny", light: { bg: "#fdf7e3", bg2: "#fbeab5", card: "#fffdf5", ink: "#2b2513", muted: "#7a6f52", line: "#efe3bd", accent: "#c98a00", accentInk: "#ffffff", soft: "#f8eecb", warnBg: "#fff0e6", warnLine: "#f2c3a3" }, dark: { bg: "#1a170e", bg2: "#2a2410", card: "#241f13", ink: "#f5efdc", muted: "#b0a585", line: "#3a3420", accent: "#f2b632", accentInk: "#1a170e", soft: "#302a18", warnBg: "#3a2a20", warnLine: "#6b4430" } },
+    mono: { name: "Mono", light: { bg: "#f4f4f4", bg2: "#e4e4e4", card: "#ffffff", ink: "#111111", muted: "#666666", line: "#e0e0e0", accent: "#111111", accentInk: "#ffffff", soft: "#ededed", warnBg: "#fff3f0", warnLine: "#f0c4b8" }, dark: { bg: "#111111", bg2: "#1d1d1d", card: "#1b1b1b", ink: "#f2f2f2", muted: "#9a9a9a", line: "#303030", accent: "#f2f2f2", accentInk: "#111111", soft: "#262626", warnBg: "#33221d", warnLine: "#6b3f33" } }
+  };
+  const COLOR_LABELS = [
+    ["bg", "Page background"], ["bg2", "Gradient end"], ["card", "Cards"], ["ink", "Text"], ["muted", "Subtle text"],
+    ["line", "Borders"], ["accent", "Buttons & icon"], ["accentInk", "Button text"], ["soft", "Second buttons"],
+    ["warnBg", "Warning card"], ["warnLine", "Warning border"]
+  ];
+
+  // ---------------- state, history, draft ----------------
+  const hist = { past: [], future: [], last: null, timer: 0 };
+  function snapshot() { return JSON.stringify(cfg); }
+  function commit(opts = {}) {
+    const s = snapshot();
+    if (s !== hist.last) {
+      if (hist.last != null) {
+        // group fast typing into a single undo step
+        if (!(opts.typing && hist.timer)) { hist.past.push(hist.last); if (hist.past.length > 100) hist.past.shift(); }
+        hist.future = [];
+      }
+      hist.last = s;
+      clearTimeout(hist.timer);
+      hist.timer = opts.typing ? setTimeout(() => hist.timer = 0, 700) : 0;
+    }
+    updateHistBtns();
+    saveDraft();
+    schedulePreview();
+  }
+  function undo() { if (!hist.past.length) return; hist.future.push(hist.last); hist.last = hist.past.pop(); cfg = JSON.parse(hist.last); afterJump(); }
+  function redo() { if (!hist.future.length) return; hist.past.push(hist.last); hist.last = hist.future.pop(); cfg = JSON.parse(hist.last); afterJump(); }
+  function afterJump() { hist.timer = 0; renderAll(); updateHistBtns(); saveDraft(); schedulePreview(); }
+  function updateHistBtns() { $("undo").disabled = !hist.past.length; $("redo").disabled = !hist.future.length; }
+  function isLive() { return LIVE && JSON.stringify(cfg) === JSON.stringify(LIVE); }
+  function saveDraft() {
+    if (isLive()) { store.del(DRAFT_KEY); $("saved").textContent = "No unsaved changes"; return; }
+    const ok = store.set(DRAFT_KEY, cfg);
+    $("saved").textContent = ok ? "Changes kept on this device · not published yet" : "Not published yet";
+  }
+
+  // ---------------- preview ----------------
+  const frame = $("frame");
+  let ptimer = 0, frameReady = false;
+  function schedulePreview() { clearTimeout(ptimer); ptimer = setTimeout(sendPreview, 120); }
+  function sendPreview() {
+    if (!frameReady) return;
+    const scheme = ui.scheme === "dark" && !cfg.theme.autoDark ? "light" : ui.scheme;
+    frame.contentWindow.postMessage({ type: "tag-render", config: cfg, mode: ui.mode, scheme }, location.origin === "null" ? "*" : location.origin);
+  }
+  window.addEventListener("message", e => {
+    if (e.source !== frame.contentWindow || !e.data || e.data.type !== "tag-ready") return;
+    frameReady = true;
+    if (!cfg) start(e.data.defaults, e.data.config);
+    else sendPreview();
+  });
+  frame.src = "index.html?editor-preview";
+  setTimeout(() => { if (!frameReady) $("frame-help").textContent = "The preview couldn't load. Open this editor from the same website as index.html (for example your GitHub Pages address), not as a local file."; }, 4000);
+
+  function start(defaults, live) {
+    DEFAULTS = clone(defaults); LIVE = clone(live);
+    const draft = store.get(DRAFT_KEY);
+    cfg = draft && Array.isArray(draft.blocks) ? merge(defaults, draft) : clone(live);
+    ensureIds(cfg);
+    if (draft && !isLive()) $("draft-note").classList.remove("hidden");
+    hist.last = snapshot();
+    renderAll(); updateHistBtns(); saveDraft(); sendPreview();
+  }
+  function ensureIds(c) {
+    const seen = new Set();
+    c.blocks.forEach(b => { if (!b.id || seen.has(b.id)) b.id = uid(); seen.add(b.id); });
+    const slots = c.blocks.filter(b => b.type === "field").map(b => +b.slot);
+    c.nextSlot = Math.max(+c.nextSlot || 0, slots.length ? Math.max(...slots) + 1 : 0);
+  }
+
+  // ---------------- small DOM kit ----------------
+  function h(tag, props, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(props || {})) {
+      if (v == null || v === false) continue;
+      if (k === "class") e.className = v;
+      else if (k === "text") e.textContent = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else if (k in e && typeof v !== "string") e[k] = v;
+      else e.setAttribute(k, v === true ? "" : v);
+    }
+    for (const k of kids.flat()) if (k != null && k !== false) e.append(k);
+    return e;
+  }
+  // obj[key] bound control. opts: {type, options, help, rerender, placeholder, min, max, step, unit, insert}
+  function ctl(label, obj, key, opts = {}) {
+    const type = opts.type || "text";
+    const changed = (val, typing) => {
+      const old = obj[key];
+      obj[key] = val;
+      if (opts.onChange) opts.onChange(val, old);
+      commit({ typing });
+      if (opts.rerender) renderAll(); else refreshHeads();
+    };
+    if (type === "check") {
+      const i = h("input", { type: "checkbox", checked: !!obj[key], onchange: () => changed(i.checked) });
+      return h("label", { class: "chk" }, i, label, opts.help && h("small", { class: "help", style: "margin:0 0 0 4px" }, opts.help));
+    }
+    let input;
+    if (type === "select") {
+      input = h("select", { onchange: () => changed(input.value) }, opts.options.map(([v, t]) => h("option", { value: v, text: t })));
+      input.value = obj[key] ?? opts.options[0][0];
+    } else if (type === "range") {
+      const out = h("output");
+      const show = v => out.textContent = (opts.fmt ? opts.fmt(v) : v + (opts.unit || ""));
+      input = h("input", { type: "range", min: opts.min, max: opts.max, step: opts.step || 1, value: obj[key] ?? opts.min, oninput: () => { show(+input.value); changed(+input.value, true); } });
+      show(+input.value);
+      return h("label", { class: "f" }, h("span", { text: label }), h("div", { class: "range" }, input, out), opts.help && h("p", { class: "help", text: opts.help }));
+    } else if (type === "textarea") {
+      input = h("textarea", { placeholder: opts.placeholder, oninput: () => changed(input.value, true) });
+      input.value = obj[key] ?? "";
+    } else {
+      input = h("input", { "data-k": key, type: type === "number" ? "number" : type === "date" ? "date" : "text", placeholder: opts.placeholder, min: opts.min, max: opts.max, oninput: () => changed(type === "number" ? (input.value === "" ? "" : +input.value) : input.value, true) });
+      input.value = obj[key] ?? "";
+      if (opts.rerender) { input.oninput = null; input.onchange = () => changed(type === "number" ? +input.value : input.value); }
+    }
+    const lab = h("span", null, label, opts.sub && h("small", null, " · " + opts.sub));
+    const wrap = h("label", { class: "f" }, lab, input);
+    if (opts.insert) wrap.append(insertBar(input, obj, key));
+    if (opts.help) wrap.append(h("p", { class: "help", text: opts.help }));
+    return wrap;
+  }
+  function insertBar(input, obj, key) {
+    const keys = cfg.blocks.filter(b => b.type === "field" && b.key).map(b => b.key);
+    if (!keys.length) return null;
+    return h("div", { class: "ins" }, h("small", { class: "help", style: "margin:0 4px 0 0", text: "Insert answer:" }),
+      keys.map(k => h("button", {
+        type: "button", text: `{${k}}`, onclick: e => {
+          e.preventDefault();
+          const s = input.selectionStart ?? input.value.length, en = input.selectionEnd ?? s;
+          input.value = input.value.slice(0, s) + `{${k}}` + input.value.slice(en);
+          input.focus(); input.selectionStart = input.selectionEnd = s + k.length + 2;
+          obj[key] = input.value; commit(); refreshHeads();
+        }
+      })));
+  }
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(t._t); t._t = setTimeout(() => t.classList.remove("show"), 2600); }
+
+  // ---------------- block list ----------------
+  function summary(b) {
+    const cut = s => (s = String(s || "").replace(/\s+/g, " ").trim()).length > 46 ? s.slice(0, 45) + "…" : s;
+    switch (b.type) {
+      case "field": {
+        const where = b.show === "none" ? "form only" : b.show === "line" ? "small line" : (b.join ? "joined card" : "card");
+        return [cut(b.label || b.key || "Untitled input"), `${INPUT_NAME[b.input] || "Text"} · ${where}`];
+      }
+      case "heading": return [cut(b.text) || "Empty heading", "Heading"];
+      case "text": return [cut(b.text) || "Empty text", { plain: "Text", muted: "Subtle text", card: "Text card", warn: "Warning card" }[b.style] || "Text"];
+      case "image": return [cut(b.alt) || (b.src ? "Image" : "Image (none chosen)"), `${b.width || 200}px · ${b.shape || "rounded"}`];
+      case "badge": return [b.icon === "emoji" ? `${b.emoji || "🐾"} emoji` : `${b.icon} icon`, "Icon badge"];
+      case "divider": return ["Divider", "Line"];
+      case "spacer": return [`${b.height || 16}px space`, "Spacer"];
+    }
+    return [b.type, ""];
+  }
+  function refreshHeads() {
+    for (const b of cfg.blocks) {
+      const row = document.querySelector(`.blk[data-id="${b.id}"]`);
+      if (!row) continue;
+      const [t, s] = summary(b);
+      row.querySelector(".bt b").firstChild.textContent = t;
+      row.querySelector(".bt small").textContent = s;
+    }
+  }
+  function renderBlocks() {
+    const list = $("blocks"); list.replaceChildren();
+    cfg.blocks.forEach((b, i) => {
+      const meta = BLOCKS[b.type] || { icon: "?", name: b.type };
+      const [t, s] = summary(b);
+      const open = ui.open.has(b.id);
+      const move = d => { const j = i + d; if (j < 0 || j >= cfg.blocks.length) return; [cfg.blocks[i], cfg.blocks[j]] = [cfg.blocks[j], cfg.blocks[i]]; commit(); renderAll(); flash(b.id); };
+      const row = h("div", { class: "blk" + (open ? " open" : ""), "data-id": b.id },
+        h("div", { class: "bh" },
+          h("button", { class: "tog", type: "button", "aria-expanded": String(open), onclick: () => { open ? ui.open.delete(b.id) : ui.open.add(b.id); renderBlocks(); } },
+            h("span", { class: "ic", "aria-hidden": "true", text: meta.icon }),
+            h("span", { class: "bt" }, h("b", null, t, b.type === "field" ? h("span", { class: "tagx", text: "INPUT" }) : null), h("small", { text: s }))),
+          h("button", { class: "b ghost sm", type: "button", title: "Move up", "aria-label": "Move up", disabled: i === 0, onclick: () => move(-1), text: "↑" }),
+          h("button", { class: "b ghost sm", type: "button", title: "Move down", "aria-label": "Move down", disabled: i === cfg.blocks.length - 1, onclick: () => move(1), text: "↓" }),
+          h("button", { class: "b ghost sm", type: "button", title: "Duplicate", "aria-label": "Duplicate", onclick: () => duplicate(i), text: "⧉" }),
+          h("button", { class: "b ghost sm danger", type: "button", title: "Delete", "aria-label": "Delete", onclick: () => remove(i), text: "✕" })),
+        open ? h("div", { class: "bb" }, editorFor(b)) : null);
+      list.append(row);
+    });
+  }
+  function flash(id) { const r = document.querySelector(`.blk[data-id="${id}"]`); if (r) { r.classList.add("flash"); r.scrollIntoView({ block: "nearest" }); setTimeout(() => r.classList.remove("flash"), 1000); } }
+
+  function uniqueKey(base, self) {
+    base = (base || "field").toLowerCase().normalize("NFKD").replace(/[^\w]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 16) || "field";
+    const taken = new Set(cfg.blocks.filter(b => b.type === "field" && b !== self).map(b => b.key));
+    let k = base, n = 2;
+    while (taken.has(k)) k = base + n++;
+    return k;
+  }
+  // keep {key} references in headings, text and titles pointing at a renamed input
+  function renameKey(from, to) {
+    if (!from || from === to) return;
+    const re = new RegExp(`\\{${from}(?=[|}])`, "g"), sw = s => typeof s === "string" ? s.replace(re, "{" + to) : s;
+    for (const x of cfg.blocks) for (const k of ["text", "fallback", "waText", "title"]) if (k in x) x[k] = sw(x[k]);
+    cfg.page.tabTitle = sw(cfg.page.tabTitle); cfg.page.tabTitleFallback = sw(cfg.page.tabTitleFallback);
+  }
+  function newBlock(type) {
+    const b = { id: uid(), type };
+    switch (type) {
+      case "field": Object.assign(b, { slot: cfg.nextSlot++, label: "New question", hint: "", placeholder: "", input: "text", maxlength: 60, show: "card", title: "New question", valueStyle: "normal", sample: "Sample answer" }); b.key = uniqueKey("question", b); break;
+      case "heading": Object.assign(b, { text: "A new heading", fallback: "", size: "l", align: "center" }); break;
+      case "text": Object.assign(b, { text: "Some text for finders to read.", fallback: "", style: "muted", size: "m", align: "center", title: "" }); break;
+      case "image": Object.assign(b, { src: "", alt: "", width: 200, shape: "rounded", align: "center" }); break;
+      case "badge": Object.assign(b, { icon: "paw", emoji: "🐶", size: 76, align: "center" }); break;
+      case "spacer": b.height = 24; break;
+    }
+    return b;
+  }
+  function add(type) {
+    const b = newBlock(type);
+    cfg.blocks.push(b); ui.open.add(b.id);
+    commit(); renderAll(); flash(b.id);
+  }
+  function duplicate(i) {
+    const b = clone(cfg.blocks[i]); b.id = uid();
+    if (b.type === "field") { b.slot = cfg.nextSlot++; b.key = uniqueKey(b.key, b); b.label = (b.label || "") + " (copy)"; }
+    cfg.blocks.splice(i + 1, 0, b); ui.open.add(b.id);
+    commit(); renderAll(); flash(b.id);
+  }
+  function remove(i) {
+    const b = cfg.blocks[i];
+    if (b.type === "field" && !confirm(`Delete the input "${b.label || b.key}"?\n\nIt disappears from the owner form, and tags you've already written won't show this answer any more.`)) return;
+    cfg.blocks.splice(i, 1); ui.open.delete(b.id);
+    commit(); renderAll();
+    toast("Deleted · Undo is at the top");
+  }
+
+  function alignCtl(b, label = "Alignment") { return ctl(label, b, "align", { type: "select", options: ALIGN }); }
+  function editorFor(b) {
+    const out = [];
+    const fieldKeys = () => cfg.blocks.filter(x => x.type === "field").map(x => `{${x.key}}`).join(" ");
+    switch (b.type) {
+      case "field": {
+        const original = LIVE && LIVE.blocks.find(x => x.type === "field" && +x.slot === +b.slot);
+        out.push(h("p", { class: "help", style: "margin-top:12px;font-weight:600;color:var(--ink)", text: "On the owner form" }));
+        out.push(ctl("Question", b, "label", { placeholder: "e.g. Pet's name", onChange: (v, old) => {
+          if ((b.title || "") !== (old || "")) return;
+          b.title = v;
+          const t = document.querySelector(`.blk[data-id="${b.id}"] input[data-k="title"]`); if (t) t.value = v;
+        } }));
+        out.push(h("div", { class: "grid2" },
+          ctl("Answer type", b, "input", { type: "select", options: INPUTS, rerender: true }),
+          ["text", "textarea", "number", "tel", "email", "url"].includes(b.input) ? ctl("Max characters", b, "maxlength", { type: "number", min: 1, max: 500 }) : h("span")));
+        if (b.input === "select") out.push(ctl("Choices", b, "options", { type: "textarea", sub: "one per line", placeholder: "Dog\nCat\nRabbit" }));
+        out.push(ctl("Helper text", b, "hint", { placeholder: "Shown in grey after the question" }));
+        if (b.input !== "date") out.push(ctl(b.input === "select" ? "Empty choice text" : "Placeholder", b, "placeholder", { placeholder: b.input === "select" ? "Choose…" : "Example shown inside the empty box" }));
+        if (original && original.input !== b.input) out.push(h("div", { class: "note warn", text: `This input used to be "${INPUT_NAME[original.input]}". Tags already written still hold the old kind of answer, so rewrite them if it looks wrong.` }));
+
+        out.push(h("p", { class: "help", style: "margin-top:16px;font-weight:600;color:var(--ink)", text: "On the finder's page" }));
+        out.push(ctl("Show it as", b, "show", { type: "select", options: [["card", "A card"], ["line", "A small line of text"], ["none", "Don't show (form only, or used inside text)"]], rerender: true }));
+        if (b.show !== "none") {
+          out.push(ctl(b.show === "line" ? "Text before the answer" : "Card title", b, "title", { placeholder: b.show === "line" ? "e.g. Born" : "e.g. My vet" }));
+          if (b.show === "card") {
+            out.push(h("div", { class: "grid2" }, ctl("Answer style", b, "valueStyle", { type: "select", options: [["big", "Big"], ["bold", "Bold"], ["normal", "Normal"], ["muted", "Subtle"]] }), h("span")));
+            out.push(ctl("Put in the same card as the row above", b, "join", { type: "check" }));
+            if (!b.join) out.push(ctl("Highlight as a warning card", b, "warn", { type: "check" }));
+          } else out.push(alignCtl(b));
+          if (b.input === "date") out.push(ctl("Also show the age (e.g. 3 years 2 months old)", b, "age", { type: "check" }));
+          if (b.input === "number") out.push(ctl("Unit after the number", b, "suffix", { placeholder: "e.g. kg" }));
+          if (b.input === "tel" && b.show === "card") {
+            out.push(ctl("Show Call, WhatsApp and Text buttons", b, "actions", { type: "check", rerender: true }));
+            if (b.actions !== false) out.push(ctl("WhatsApp message", b, "waText", { insert: true, help: "Use {name|other words} to say something else when that answer is empty." }));
+          }
+          if (b.input === "email" && b.show === "card") out.push(ctl("Show an Email button", b, "actions", { type: "check" }));
+          if (b.input === "url" && b.show === "card") out.push(ctl("Show an Open link button", b, "actions", { type: "check" }));
+          if ((b.input === "text" || b.input === "textarea") && b.show === "card") out.push(ctl("Show a \"Find on map\" button", b, "map", { type: "check" }));
+        }
+
+        out.push(h("p", { class: "help", style: "margin-top:16px;font-weight:600;color:var(--ink)", text: "Preview & advanced" }));
+        out.push(ctl("Sample answer", b, "sample", { type: b.input === "date" ? "date" : b.input === "textarea" ? "textarea" : "text", help: "Only used in the preview, never on the real page." }));
+        out.push(ctl("Short name", b, "key", {
+          rerender: true, help: `Put {${b.key}} in a heading or text to show this answer there.`,
+          onChange: (v, old) => { b.key = uniqueKey(v, b); renameKey(old, b.key); }
+        }));
+        out.push(h("div", { class: "note", text: `Storage slot #${b.slot}. Each input keeps its own slot forever, so reordering or editing inputs never breaks tags you've already written.` }));
+        break;
+      }
+      case "heading":
+        out.push(ctl("Text", b, "text", { insert: true }));
+        out.push(ctl("If an answer is empty, show instead", b, "fallback", { placeholder: "e.g. Hi!", help: "Used when the text has an {answer} that's blank on the tag." }));
+        out.push(h("div", { class: "grid2" }, ctl("Size", b, "size", { type: "select", options: [["xl", "Extra large"], ["l", "Large"], ["m", "Medium"]] }), alignCtl(b)));
+        break;
+      case "text":
+        out.push(ctl("Text", b, "text", { type: "textarea", insert: true }));
+        out.push(ctl("If an answer is empty, show instead", b, "fallback", { placeholder: "Leave blank to hide" }));
+        out.push(h("div", { class: "grid2" },
+          ctl("Style", b, "style", { type: "select", options: [["plain", "Plain"], ["muted", "Subtle (grey)"], ["card", "In a card"], ["warn", "In a warning card"]], rerender: true }),
+          ctl("Size", b, "size", { type: "select", options: [["l", "Large"], ["m", "Normal"], ["s", "Small"]] })));
+        if (b.style === "card" || b.style === "warn") out.push(ctl("Card title", b, "title", { placeholder: "e.g. Reward" }));
+        out.push(alignCtl(b));
+        break;
+      case "image":
+        out.push(imagePicker(b, "src", 900));
+        out.push(ctl("Description", b, "alt", { placeholder: "e.g. Mochi on the sofa", help: "Read out by screen readers, and shown if the image can't load." }));
+        out.push(ctl("Width", b, "width", { type: "range", min: 40, max: 460, step: 4, unit: "px" }));
+        out.push(h("div", { class: "grid2" }, ctl("Shape", b, "shape", { type: "select", options: [["rounded", "Rounded corners"], ["circle", "Circle"], ["square", "Square corners"]] }), alignCtl(b)));
+        break;
+      case "badge":
+        out.push(h("div", { class: "grid2" },
+          ctl("Icon", b, "icon", { type: "select", options: [["paw", "Paw"], ["heart", "Heart"], ["bone", "Bone"], ["home", "House"], ["star", "Star"], ["emoji", "Emoji…"]], rerender: true }),
+          b.icon === "emoji" ? ctl("Emoji", b, "emoji", { placeholder: "🐶" }) : h("span")));
+        out.push(ctl("Size", b, "size", { type: "range", min: 32, max: 200, step: 2, unit: "px" }));
+        out.push(alignCtl(b));
+        out.push(h("p", { class: "help", text: "The badge uses the \"Buttons & icon\" colour from the Colours tab." }));
+        break;
+      case "spacer": out.push(ctl("Height", b, "height", { type: "range", min: 4, max: 160, step: 4, unit: "px" })); break;
+      case "divider": out.push(h("p", { class: "help", style: "margin-top:12px", text: "A thin line using the Borders colour." })); break;
+    }
+    return out;
+  }
+
+  // ---------------- images ----------------
+  function readImage(file, maxSide) {
+    return new Promise((resolve, reject) => {
+      if (!file.type.startsWith("image/")) return reject(new Error("That file isn't an image."));
+      const fr = new FileReader();
+      fr.onerror = () => reject(new Error("Couldn't read that file."));
+      fr.onload = () => {
+        const url = fr.result;
+        if (file.type === "image/svg+xml" || file.type === "image/gif" || file.size < 150 * 1024) return resolve(url);
+        const img = new Image();
+        img.onerror = () => reject(new Error("Couldn't open that image."));
+        img.onload = () => {
+          const s = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+          const c = document.createElement("canvas");
+          c.width = Math.round(img.naturalWidth * s); c.height = Math.round(img.naturalHeight * s);
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          const png = file.type === "image/png" && c.toDataURL("image/png");
+          const jpg = c.toDataURL("image/jpeg", 0.82);
+          resolve(png && png.length < jpg.length * 1.3 ? png : jpg);
+        };
+        img.src = url;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+  function imagePicker(obj, key, maxSide) {
+    const preview = h("img", { alt: "" });
+    const info = h("small", { class: "help", style: "margin:0" });
+    const sync = () => {
+      const v = obj[key] || "";
+      preview.src = v || "data:image/gif;base64,R0lGODlhAQABAAAAACw="; preview.style.visibility = v ? "visible" : "hidden";
+      info.textContent = !v ? "No image yet" : v.startsWith("data:") ? `Stored in config.json · ${Math.round(v.length * 0.75 / 1024)} KB` : "Linked from the web";
+    };
+    const file = h("input", {
+      type: "file", accept: "image/*", hidden: true, onchange: async () => {
+        const f = file.files[0]; file.value = "";
+        if (!f) return;
+        try { obj[key] = await readImage(f, maxSide); commit(); sync(); urlIn.value = ""; refreshHeads(); }
+        catch (e) { toast(e.message); }
+      }
+    });
+    const urlIn = h("input", {
+      placeholder: "…or paste an image link (https://…)", value: obj[key] && !obj[key].startsWith("data:") ? obj[key] : "",
+      onchange: () => { const v = urlIn.value.trim(); if (v && !/^https?:\/\//i.test(v)) { toast("Image links need to start with https://"); return; } obj[key] = v; commit(); sync(); }
+    });
+    sync();
+    return h("div", { class: "f" }, h("span", { text: "Image" }),
+      h("div", { class: "thumb" }, preview, h("div", { style: "display:flex;flex-direction:column;gap:6px;align-items:flex-start" },
+        h("div", { style: "display:flex;gap:6px;flex-wrap:wrap" },
+          h("label", { class: "b sm" }, "Upload…", file),
+          h("button", { class: "b sm ghost danger", type: "button", text: "Remove", onclick: () => { obj[key] = ""; urlIn.value = ""; commit(); sync(); } })),
+        info)),
+      urlIn);
+  }
+
+  // ---------------- other panels ----------------
+  function renderAdd() {
+    $("add").replaceChildren(...Object.entries(BLOCKS).map(([t, m]) => h("button", { type: "button", title: m.desc, onclick: () => add(t) }, h("span", { class: "ic", "aria-hidden": "true", text: m.icon }), m.name)));
+  }
+  function renderStyle() {
+    const t = cfg.theme;
+    $("presets").replaceChildren(...Object.entries(PRESETS).map(([id, p]) => h("button", {
+      class: "preset", type: "button", "aria-pressed": String(t.preset === id),
+      onclick: () => { t.light = clone(p.light); t.dark = clone(p.dark); t.preset = id; commit(); renderAll(); }
+    }, h("span", { class: "sw" }, [p.light.bg, p.light.card, p.light.accent, p.dark.bg, p.dark.accent].map(c => h("i", { style: `background:${c}` }))), p.name)));
+
+    document.querySelectorAll("#pal-seg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.pal === ui.pal)));
+    const pal = t[ui.pal];
+    $("colors").replaceChildren(h("div", { class: "colors" }, COLOR_LABELS.map(([k, label]) => {
+      if (k === "bg2" && t.background.type !== "gradient") return null;
+      const hex = h("input", { type: "text", value: pal[k], maxlength: 9, "aria-label": label + " hex" });
+      const pick = h("input", { type: "color", value: /^#[0-9a-f]{6}$/i.test(pal[k]) ? pal[k] : "#000000", "aria-label": label });
+      const set = v => { pal[k] = v; t.preset = ""; commit({ typing: true }); $("presets").querySelectorAll(".preset").forEach(p => p.setAttribute("aria-pressed", "false")); };
+      pick.oninput = () => { hex.value = pick.value; set(pick.value); };
+      hex.onchange = () => { const v = hex.value.trim(); if (/^#[0-9a-f]{6}$/i.test(v)) { pick.value = v; set(v); } else hex.value = pal[k]; };
+      return h("label", { class: "col" }, pick, h("span", { text: label }), hex);
+    })));
+    $("autodark").replaceChildren(ctl("Switch to the dark colours when the finder's phone is in dark mode", t, "autoDark", { type: "check" }),
+      h("p", { class: "help", text: "Use the ☀︎ / ☾ buttons above the preview to check both." }));
+
+    const bg = t.background;
+    const bgKids = [ctl("Background type", bg, "type", { type: "select", options: [["color", "Solid colour"], ["gradient", "Gradient"], ["image", "Image"]], rerender: true })];
+    if (bg.type === "color") bgKids.push(h("p", { class: "help", text: "Uses the \"Page background\" colour above." }));
+    if (bg.type === "gradient") {
+      bgKids.push(ctl("Direction", bg, "angle", { type: "range", min: 0, max: 360, step: 15, unit: "°" }));
+      bgKids.push(h("p", { class: "help", text: "Fades from \"Page background\" to \"Gradient end\" (set in Colours above)." }));
+    }
+    if (bg.type === "image") {
+      bgKids.push(imagePicker(bg, "image", 1600));
+      bgKids.push(ctl("Fit", bg, "fit", { type: "select", options: [["cover", "Fill the screen"], ["contain", "Show the whole image"], ["tile", "Repeat as a pattern"]] }));
+      bgKids.push(ctl("Fade (keeps text readable)", bg, "overlay", { type: "range", min: 0, max: 0.9, step: 0.05, fmt: v => Math.round(v * 100) + "%" }));
+    }
+    $("bg-ctl").replaceChildren(...bgKids);
+
+    $("type-ctl").replaceChildren(
+      ctl("Font", t, "font", { type: "select", options: [["system", "Standard"], ["rounded", "Rounded"], ["serif", "Classic serif"], ["playful", "Playful"], ["mono", "Typewriter"]] }),
+      ctl("Corner roundness", t, "radius", { type: "range", min: 0, max: 32, step: 1, unit: "px" }));
+  }
+  function renderForms() {
+    const c = cfg.creator;
+    $("creator-ctl").replaceChildren(
+      ctl("Title", c, "title"),
+      ctl("Intro text", c, "intro", { type: "textarea" }),
+      ctl("Show the \"nothing is stored\" privacy note", c, "privacyNote", { type: "check" }));
+    $("page-ctl").replaceChildren(
+      ctl("On a tag", cfg.page, "tabTitle", { insert: true }),
+      ctl("If an answer is empty, and on the owner form", cfg.page, "tabTitleFallback"));
+    $("footer-ctl").replaceChildren(
+      ctl("Show the link at the bottom of the finder's page", cfg.footer, "show", { type: "check", rerender: true }),
+      cfg.footer.show ? ctl("Link text", cfg.footer, "text") : null,
+      h("p", { class: "help", text: "It links back to the owner form so finders can make their own tag." }));
+  }
+  function renderAll() {
+    const y = document.querySelector(".side").scrollTop;
+    renderBlocks(); renderStyle(); renderForms();
+    document.querySelector(".side").scrollTop = y;
+  }
+  renderAdd();
+
+  // ---------------- tabs & view toggles ----------------
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+    ui.tab = b.dataset.tab;
+    document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+    document.querySelectorAll(".pane").forEach(p => p.classList.toggle("hidden", p.dataset.pane !== ui.tab));
+    if (ui.tab === "form" && ui.mode !== "creator") setMode("creator");
+    else if (ui.tab === "content" && ui.mode !== "viewer") setMode("viewer");
+  });
+  function setMode(m) { ui.mode = m; document.querySelectorAll("[data-mode]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.mode === m))); sendPreview(); }
+  document.querySelectorAll("[data-mode]").forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  document.querySelectorAll("[data-scheme]").forEach(b => b.onclick = () => {
+    ui.scheme = b.dataset.scheme;
+    document.querySelectorAll("[data-scheme]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    if (cfg.theme.autoDark || ui.scheme === "light") { ui.pal = ui.scheme; renderStyle(); }
+    sendPreview();
+  });
+  document.querySelectorAll("#pal-seg button").forEach(b => b.onclick = () => { ui.pal = b.dataset.pal; renderStyle(); });
+  document.querySelectorAll(".mobile-switch button").forEach(b => b.onclick = () => {
+    document.body.dataset.view = b.dataset.view;
+    document.querySelectorAll(".mobile-switch button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  });
+  $("undo").onclick = undo; $("redo").onclick = redo;
+  document.addEventListener("keydown", e => {
+    if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== "z") return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === "INPUT" || tag === "TEXTAREA") return; // let the box handle its own undo
+    e.preventDefault(); e.shiftKey ? redo() : undo();
+  });
+  $("discard").onclick = () => {
+    if (!confirm("Throw away your unsaved changes and load the design that's live on the site?")) return;
+    cfg = clone(LIVE); ensureIds(cfg); commit(); renderAll();
+    $("draft-note").classList.add("hidden");
+  };
+  window.addEventListener("beforeunload", e => { if (cfg && !isLive()) { e.preventDefault(); e.returnValue = ""; } });
+
+  // ---------------- save / publish ----------------
+  const exportJson = () => JSON.stringify(cfg, null, 2) + "\n";
+  const dlg = $("save-dlg");
+  $("save-open").onclick = () => { loadGh(); $("gh-status").textContent = ""; dlg.showModal(); };
+  $("save-close").onclick = () => dlg.close();
+  $("download").onclick = () => {
+    const a = h("a", { href: URL.createObjectURL(new Blob([exportJson()], { type: "application/json" })), download: "config.json" });
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast("Downloaded config.json · upload it to your repository");
+  };
+  $("copy-json").onclick = async () => {
+    try { await navigator.clipboard.writeText(exportJson()); toast("Copied. Paste it into config.json on GitHub"); }
+    catch { toast("Couldn't copy. Use Download instead."); }
+  };
+  $("import-file").onchange = async e => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    try {
+      const c = JSON.parse(await f.text());
+      if (!c || !Array.isArray(c.blocks)) throw new Error();
+      cfg = merge(DEFAULTS, c); ensureIds(cfg); commit(); renderAll(); dlg.close(); toast("Opened " + f.name);
+    } catch { toast("That isn't a tag page config.json"); }
+  };
+  $("reset").onclick = () => {
+    if (!confirm("Go back to the original pet tag design? You can still undo this.")) return;
+    cfg = clone(DEFAULTS);
+    // keep slots that were added since, so they're never reused for a different question
+    cfg.nextSlot = Math.max(DEFAULTS.nextSlot, JSON.parse(hist.last).nextSlot || 0);
+    ensureIds(cfg); commit(); renderAll(); dlg.close(); toast("Reset · Undo is at the top");
+  };
+
+  function guessRepo() {
+    const m = /^([\w-]+)\.github\.io$/i.exec(location.hostname);
+    const seg = location.pathname.split("/").filter(Boolean);
+    const dir = seg.length && !/\.html?$/i.test(seg[0]) ? seg[0] : "";
+    return m ? { owner: m[1], repo: dir || `${m[1]}.github.io`, path: "config.json" } : {};
+  }
+  function loadGh() {
+    const s = Object.assign({ branch: "main", path: "config.json" }, guessRepo(), store.get(GH_KEY) || {});
+    $("gh-owner").value = s.owner || ""; $("gh-repo").value = s.repo || ""; $("gh-branch").value = s.branch || "main";
+    $("gh-path").value = s.path || "config.json"; $("gh-token").value = s.token || ""; $("gh-remember").checked = !!s.token;
+  }
+  const b64utf8 = s => { const b = new TextEncoder().encode(s); let bin = ""; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(bin); };
+  $("gh-publish").onclick = async () => {
+    const st = $("gh-status"), btn = $("gh-publish");
+    const owner = $("gh-owner").value.trim(), repo = $("gh-repo").value.trim(), branch = $("gh-branch").value.trim() || "main";
+    const path = ($("gh-path").value.trim() || "config.json").replace(/^\/+/, ""), token = $("gh-token").value.trim();
+    if (!owner || !repo || !token) { st.textContent = "Fill in the owner, repository and token."; return; }
+    const keep = { owner, repo, branch, path };
+    if ($("gh-remember").checked) keep.token = token;
+    store.set(GH_KEY, keep);
+    const api = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}`;
+    const headers = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+    btn.disabled = true; st.textContent = "Publishing…";
+    try {
+      let sha;
+      const cur = await fetch(`${api}?ref=${encodeURIComponent(branch)}`, { headers, cache: "no-store" });
+      if (cur.ok) sha = (await cur.json()).sha;
+      else if (cur.status !== 404) throw new Error(await ghError(cur));
+      const res = await fetch(api, {
+        method: "PUT", headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "Update tag page design", content: b64utf8(exportJson()), branch, ...(sha ? { sha } : {}) })
+      });
+      if (!res.ok) throw new Error(await ghError(res));
+      LIVE = clone(cfg); saveDraft(); $("draft-note").classList.add("hidden");
+      st.textContent = "✓ Published. Your page updates in about a minute.";
+      toast("Published to GitHub");
+    } catch (e) {
+      st.textContent = "Couldn't publish: " + (e.message || e);
+    } finally { btn.disabled = false; }
+  };
+  async function ghError(r) {
+    let msg = ""; try { msg = (await r.json()).message || ""; } catch { }
+    if (r.status === 401) return "the token was rejected. Check it's copied fully and hasn't expired.";
+    if (r.status === 403) return "the token isn't allowed to change this repository. Give it Contents: read and write. " + msg;
+    if (r.status === 404) return "repository or branch not found. Check the owner, repository and branch, and that the token can see this repository.";
+    if (r.status === 409 || r.status === 422) return "GitHub refused the update (" + msg + "). Try again in a moment.";
+    return `${r.status} ${msg}`;
+  }
+})();
+</script>
+</body>
+</html>
