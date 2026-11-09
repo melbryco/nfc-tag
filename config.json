@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "nextSlot": 6,
+  "page": {
+    "tabTitle": "{pet} · Pet Tag",
+    "tabTitleFallback": "Pet Tag"
+  },
+  "theme": {
+    "preset": "warm",
+    "font": "system",
+    "radius": 18,
+    "autoDark": true,
+    "light": {
+      "bg": "#f6f1ea",
+      "bg2": "#efe4d6",
+      "card": "#fffdf9",
+      "ink": "#2b2420",
+      "muted": "#7a6e66",
+      "line": "#e7ddd2",
+      "accent": "#d9653b",
+      "accentInk": "#ffffff",
+      "soft": "#f3e7dc",
+      "warnBg": "#fff1e6",
+      "warnLine": "#f2c3a3"
+    },
+    "dark": {
+      "bg": "#1c1917",
+      "bg2": "#2a211c",
+      "card": "#262220",
+      "ink": "#f3ece6",
+      "muted": "#a89c93",
+      "line": "#3a3431",
+      "accent": "#ee7a4f",
+      "accentInk": "#1c1917",
+      "soft": "#332b27",
+      "warnBg": "#3a2a20",
+      "warnLine": "#6b4430"
+    },
+    "background": {
+      "type": "color",
+      "angle": 180,
+      "image": "",
+      "fit": "cover",
+      "overlay": 0.35
+    }
+  },
+  "creator": {
+    "title": "Create your pet's tag",
+    "intro": "Fill in what you want a finder to see. Leave anything blank to keep it off the tag.",
+    "privacyNote": true
+  },
+  "footer": {
+    "show": true,
+    "text": "Make a tag like this"
+  },
+  "blocks": [
+    {
+      "id": "b1",
+      "type": "field",
+      "slot": 0,
+      "key": "pet",
+      "label": "Pet's name",
+      "hint": "",
+      "placeholder": "Mochi",
+      "input": "text",
+      "maxlength": 40,
+      "show": "none",
+      "title": "",
+      "sample": "Mochi"
+    },
+    {
+      "id": "b2",
+      "type": "badge",
+      "icon": "paw",
+      "emoji": "🐶",
+      "size": 76,
+      "align": "center"
+    },
+    {
+      "id": "b3",
+      "type": "heading",
+      "text": "Hi, I'm {pet}!",
+      "fallback": "Hi!",
+      "size": "xl",
+      "align": "center"
+    },
+    {
+      "id": "b4",
+      "type": "text",
+      "text": "If I'm lost, please contact my human.",
+      "fallback": "",
+      "style": "muted",
+      "size": "m",
+      "align": "center",
+      "title": ""
+    },
+    {
+      "id": "b5",
+      "type": "field",
+      "slot": 3,
+      "key": "dob",
+      "label": "Pet's date of birth",
+      "hint": "",
+      "placeholder": "",
+      "input": "date",
+      "show": "line",
+      "title": "Born",
+      "align": "center",
+      "age": true,
+      "sample": "2021-04-12"
+    },
+    {
+      "id": "b6",
+      "type": "field",
+      "slot": 1,
+      "key": "owner",
+      "label": "Owner's name",
+      "hint": "",
+      "placeholder": "Evan",
+      "input": "text",
+      "maxlength": 60,
+      "show": "card",
+      "title": "My human",
+      "valueStyle": "big",
+      "sample": "Evan"
+    },
+    {
+      "id": "b7",
+      "type": "field",
+      "slot": 2,
+      "key": "phone",
+      "label": "Contact number",
+      "hint": "include country code for WhatsApp",
+      "placeholder": "+65 9123 4567",
+      "input": "tel",
+      "maxlength": 24,
+      "show": "card",
+      "join": true,
+      "title": "",
+      "valueStyle": "muted",
+      "actions": true,
+      "waText": "Hi, I found {pet|your pet}!",
+      "sample": "+65 9123 4567"
+    },
+    {
+      "id": "b8",
+      "type": "field",
+      "slot": 5,
+      "key": "cond",
+      "label": "Underlying conditions",
+      "hint": "keep it short",
+      "placeholder": "e.g. Diabetic, needs insulin twice daily. Allergic to chicken.",
+      "input": "textarea",
+      "maxlength": 300,
+      "show": "card",
+      "warn": true,
+      "title": "Health notes",
+      "valueStyle": "normal",
+      "sample": "Diabetic, needs insulin twice daily."
+    },
+    {
+      "id": "b9",
+      "type": "field",
+      "slot": 4,
+      "key": "vet",
+      "label": "Vet clinic",
+      "hint": "",
+      "placeholder": "Clinic name and area",
+      "input": "text",
+      "maxlength": 80,
+      "show": "card",
+      "title": "My vet",
+      "valueStyle": "bold",
+      "map": true,
+      "sample": "Happy Paws Vet, Tiong Bahru"
+    }
+  ]
+}
