@@ -19,6 +19,8 @@ header{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1
 header h1{font-size:16px;margin:0 auto 0 0;display:flex;align-items:center;gap:8px}
 header h1 .dot{width:22px;height:22px;border-radius:50%;background:var(--accent)}
 #saved{font-size:12px;color:var(--muted)}
+.src{display:inline-flex;align-items:center;gap:2px;font-size:12px;color:var(--muted);max-width:240px;min-width:0}
+.src #src-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .b{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:34px;padding:6px 12px;border-radius:9px;border:1px solid var(--line);background:var(--soft);cursor:pointer;font-weight:600;white-space:nowrap;text-decoration:none;color:var(--ink)}
 .b:hover{border-color:var(--muted)}
 .b.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
@@ -128,7 +130,9 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
   <span id="saved"></span>
   <button class="b ghost" id="undo" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶<span class="lbl"> Undo</span></button>
   <button class="b ghost" id="redo" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷<span class="lbl"> Redo</span></button>
-  <button class="b primary" id="save-open" style="margin-left:auto">Save &amp; publish</button>
+  <span id="src-info" class="src hidden"><span id="src-name"></span><button class="b ghost sm" id="src-close" type="button" title="Close this file and go back to the index.html in this folder" aria-label="Close this file">✕</button></span>
+  <label class="b" id="open-page" title="Open an index.html to preview and edit its design">📂<span class="lbl"> Open index.html…</span><input type="file" id="page-file" accept=".html,.htm,text/html" hidden></label>
+  <button class="b primary" id="save-open">Save</button>
   <div class="seg mobile-switch" role="group" aria-label="View">
     <button data-view="edit" aria-pressed="true">Edit</button>
     <button data-view="preview" aria-pressed="false">Preview</button>
@@ -144,7 +148,7 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
     </div>
 
     <div class="pane" data-pane="content">
-      <div id="draft-note" class="note warn hidden" style="margin:0 0 12px">Restored your unsaved changes from last time. <button class="b sm" id="discard">Discard and reload the live page</button></div>
+      <div id="draft-note" class="note warn hidden" style="margin:0 0 12px">Restored your unsaved changes from last time. <button class="b sm" id="discard">Discard them</button></div>
       <p class="help" style="margin:0 0 10px">This is everything a finder sees, top to bottom. <b>Inputs</b> also become the questions on the owner form, in the same order. Click a row to edit it.</p>
       <div id="blocks"></div>
       <div class="sec" style="margin-top:14px">
@@ -154,6 +158,10 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
       <div class="sec">
         <h2>Footer link</h2>
         <div id="footer-ctl"></div>
+      </div>
+      <div class="sec">
+        <h2>Help footer</h2>
+        <div id="help-ctl"></div>
       </div>
     </div>
 
@@ -193,7 +201,7 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
         <button data-scheme="dark" aria-pressed="false">☾ Dark</button>
       </div>
     </div>
-    <div class="phone"><iframe id="frame" title="Live preview"></iframe></div>
+    <div class="phone"><iframe id="frame" name="tag-editor-preview" title="Live preview"></iframe></div>
     <p class="help" id="frame-help" style="text-align:center;max-width:400px">The finder's view uses each input's <b>sample answer</b>, so you can see what a real tag looks like.</p>
   </section>
 </div>
@@ -201,40 +209,34 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
 <!-- save dialog -->
 <dialog id="save-dlg">
   <h3>Save your design</h3>
-  <p class="help" style="margin-top:0">The page reads its design from <code>config.json</code>, sitting next to <code>index.html</code>. Tags you've already written keep working.</p>
+  <p class="help" style="margin-top:0">Everything happens in this browser. Nothing is uploaded anywhere. Tags you've already written keep working.</p>
 
   <div class="sec" style="margin-top:12px">
-    <h2>Option 1 · Download and upload</h2>
+    <h2>Recommended · A complete page</h2>
     <ol class="steps">
-      <li>Download <code>config.json</code>.</li>
-      <li>In your GitHub repository, choose <b>Add file → Upload files</b> and drop it in (it replaces the old one), then commit.</li>
-      <li>GitHub Pages updates in about a minute.</li>
+      <li>Download <code>index.html</code>. It's the whole tag page with your design built in.</li>
+      <li>Replace the old <code>index.html</code> in your folder or repository with it, and keep <code>editor.html</code> next to it.</li>
+      <li>Upload it to wherever you host the page (any web host works). Use the same web address as before, or tags you've already written will point to the old page.</li>
     </ol>
+    <p class="help">To keep editing later, open <code>editor.html</code> from the same folder. It picks up the design saved in <code>index.html</code>.</p>
     <div class="dlg-btns" style="justify-content:flex-start">
-      <button class="b primary" id="download">Download config.json</button>
+      <button class="b primary" id="download-html">Download index.html</button>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Or · Just the design file</h2>
+    <p class="help" style="margin-top:0"><code>config.json</code> goes next to <code>index.html</code>. It's only used when <code>index.html</code> has no design built in, and it doesn't load when the page is opened as a local file.</p>
+    <div class="dlg-btns" style="justify-content:flex-start">
+      <button class="b" id="download">Download config.json</button>
       <button class="b" id="copy-json">Copy as text</button>
     </div>
   </div>
 
   <div class="sec">
-    <h2>Option 2 · Publish straight to GitHub</h2>
-    <p class="help" style="margin-top:0">Needs a fine-grained <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">personal access token</a> with <b>Contents: read and write</b> on this repository only. It's sent only to api.github.com.</p>
-    <div class="grid2">
-      <label class="f"><span>Owner</span><input id="gh-owner" placeholder="your-username"></label>
-      <label class="f"><span>Repository</span><input id="gh-repo" placeholder="nfc-tag"></label>
-      <label class="f"><span>Branch</span><input id="gh-branch" placeholder="main"></label>
-      <label class="f"><span>File path</span><input id="gh-path" placeholder="config.json"></label>
-    </div>
-    <label class="f"><span>Token</span><input id="gh-token" type="password" autocomplete="off" placeholder="github_pat_…"></label>
-    <label class="chk"><input type="checkbox" id="gh-remember"> Remember the token on this device</label>
-    <p id="gh-status" class="help" role="status"></p>
-    <div class="dlg-btns" style="justify-content:flex-start"><button class="b primary" id="gh-publish">Publish to GitHub</button></div>
-  </div>
-
-  <div class="sec">
     <h2>Other</h2>
     <div class="dlg-btns" style="justify-content:flex-start;margin-top:0">
-      <label class="b">Open a config.json…<input type="file" id="import-file" accept=".json,application/json" hidden></label>
+      <label class="b">Open a saved design…<input type="file" id="import-file" accept=".json,.html,.htm,application/json,text/html" hidden></label>
       <button class="b danger" id="reset">Reset to the original design</button>
     </div>
   </div>
@@ -247,7 +249,11 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
 (() => {
   "use strict";
   const $ = id => document.getElementById(id);
-  const DRAFT_KEY = "tagEditor.draft.v1", GH_KEY = "tagEditor.github.v1";
+  const DRAFT_KEY = "tagEditor.draft.v1";
+  const SOURCE_KEY = "tagEditor.source.v1";
+  const LOCAL = location.protocol === "file:" || location.origin === "null";
+  // an opened file runs in a sandboxed preview with no origin of its own, so it can only be reached with "*"
+  const target = () => upload || LOCAL ? "*" : location.origin;
   const store = {
     get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
@@ -262,7 +268,9 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
   };
   const uid = () => "b" + Math.random().toString(36).slice(2, 9);
 
-  let DEFAULTS = null, LIVE = null, cfg = null;
+  let DEFAULTS = null, LIVE = null, cfg = null, PAGE_SRC = "";
+  // the index.html opened with "Open index.html…" ({ name, text }), or null for the one in this folder
+  let upload = null, pendingFresh = false;
   const ui = { open: new Set(), mode: "viewer", scheme: "light", pal: "light", tab: "content" };
 
   // ---------------- catalogue ----------------
@@ -277,8 +285,9 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
   };
   const INPUTS = [
     ["text", "Short text"], ["textarea", "Long text (paragraph)"], ["number", "Number"], ["date", "Date"],
-    ["tel", "Phone number"], ["email", "Email"], ["url", "Website link"], ["select", "Dropdown (pick one)"]
+    ["tel", "Phone number"], ["email", "Email"], ["url", "Website link"], ["maplink", "Google Maps link"], ["select", "Dropdown (pick one)"]
   ];
+  const IMAGE_WHERE = [["viewer", "Finder's page only"], ["creator", "Owner form only"], ["both", "Both pages"]];
   const INPUT_NAME = Object.fromEntries(INPUTS);
   const ALIGN = [["left", "Left"], ["center", "Centre"], ["right", "Right"]];
   const PRESETS = {
@@ -322,34 +331,104 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
   function saveDraft() {
     if (isLive()) { store.del(DRAFT_KEY); $("saved").textContent = "No unsaved changes"; return; }
     const ok = store.set(DRAFT_KEY, cfg);
-    $("saved").textContent = ok ? "Changes kept on this device · not published yet" : "Not published yet";
+    $("saved").textContent = ok ? "Changes kept in this browser · not saved to a file yet" : "Not saved to a file yet";
   }
 
   // ---------------- preview ----------------
   const frame = $("frame");
-  let ptimer = 0, frameReady = false;
+  const FRAME_HELP = $("frame-help").innerHTML;
+  let ptimer = 0, frameReady = false, loadTimer = 0;
   function schedulePreview() { clearTimeout(ptimer); ptimer = setTimeout(sendPreview, 120); }
   function sendPreview() {
-    if (!frameReady) return;
+    if (!frameReady || !cfg) return;
     const scheme = ui.scheme === "dark" && !cfg.theme.autoDark ? "light" : ui.scheme;
-    frame.contentWindow.postMessage({ type: "tag-render", config: cfg, mode: ui.mode, scheme }, location.origin === "null" ? "*" : location.origin);
+    frame.contentWindow.postMessage({ type: "tag-render", config: cfg, mode: ui.mode, scheme }, target());
   }
   window.addEventListener("message", e => {
     if (e.source !== frame.contentWindow || !e.data || e.data.type !== "tag-ready") return;
     frameReady = true;
-    if (!cfg) start(e.data.defaults, e.data.config);
+    clearTimeout(loadTimer);
+    $("frame-help").innerHTML = FRAME_HELP;
+    // an opened file is saved from its original text, untouched by the preview
+    if (upload) PAGE_SRC = upload.text;
+    else if (typeof e.data.source === "string") PAGE_SRC = e.data.source;
+    if (!cfg || pendingFresh) { const fresh = pendingFresh; pendingFresh = false; start(e.data.defaults, e.data.config, fresh); }
     else sendPreview();
   });
-  frame.src = "index.html?editor-preview";
-  setTimeout(() => { if (!frameReady) $("frame-help").textContent = "The preview couldn't load. Open this editor from the same website as index.html (for example your GitHub Pages address), not as a local file."; }, 4000);
 
-  function start(defaults, live) {
+  // ---------------- which index.html is being edited ----------------
+  // The page shows the live preview when it's framed with ?editor-preview or with the frame's name.
+  // Older pages only know ?editor-preview, which an opened file can't have, so that check is switched on.
+  function previewSource(text) {
+    if (text.includes('"tag-editor-preview"')) return text;
+    const re = /new URLSearchParams\(location\.search\)\.has\("editor-preview"\)/;
+    return re.test(text) ? text.replace(re, "true") : null;
+  }
+  function loadFrame() {
+    frameReady = false;
+    if (upload) {
+      // the opened file runs walled off from the editor
+      frame.setAttribute("sandbox", "allow-scripts allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox");
+      frame.srcdoc = previewSource(upload.text);
+    } else {
+      frame.removeAttribute("sandbox");
+      frame.removeAttribute("srcdoc");
+      frame.src = "index.html?editor-preview";
+    }
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(() => {
+      if (frameReady) return;
+      $("frame-help").textContent = upload
+        ? `${upload.name} didn't load in the preview. Check it's a tag page, or open another one with "Open index.html…" at the top.`
+        : `The preview couldn't load. Use "Open index.html…" at the top to pick your index.html, or keep editor.html in the same folder as index.html and open editor.html again.`;
+    }, 4000);
+  }
+  function showSource() {
+    $("src-info").classList.toggle("hidden", !upload);
+    $("src-name").textContent = upload ? "Editing " + upload.name : "";
+    $("src-info").title = upload ? `Editing ${upload.name}, opened from your computer` : "";
+  }
+  function openSource(src) {
+    upload = src;
+    if (src) { if (!store.set(SOURCE_KEY, src)) toast(`Opened ${src.name}. It's too big to keep in this browser, so open it again if you reload the editor.`); }
+    else store.del(SOURCE_KEY);
+    store.del(DRAFT_KEY);
+    pendingFresh = true;
+    showSource();
+    loadFrame();
+  }
+  $("page-file").onchange = async e => {
+    const f = e.target.files[0]; e.target.value = "";
+    if (!f) return;
+    let text;
+    try { text = await f.text(); } catch { toast("Couldn't read that file."); return; }
+    if (!CONFIG_RE.test(text) || !text.includes("tag-ready") || !previewSource(text)) {
+      toast(`${f.name} isn't a tag page this editor can open.`); return;
+    }
+    if (cfg && !isLive() && !confirm(`Open ${f.name}?\n\nYour unsaved changes to the current design will be replaced.`)) return;
+    openSource({ name: f.name, text });
+  };
+  $("src-close").onclick = () => {
+    if (cfg && !isLive() && !confirm(`Close ${upload.name} and go back to the index.html in this folder?\n\nYour unsaved changes will be lost.`)) return;
+    openSource(null);
+  };
+  // reopen the file that was being edited before the editor was reloaded
+  {
+    const saved = store.get(SOURCE_KEY);
+    if (saved && typeof saved.text === "string" && previewSource(saved.text)) upload = { name: String(saved.name || "index.html"), text: saved.text };
+    else store.del(SOURCE_KEY);
+    showSource();
+    loadFrame();
+  }
+
+  function start(defaults, live, fresh) {
     DEFAULTS = clone(defaults); LIVE = clone(live);
-    const draft = store.get(DRAFT_KEY);
+    const draft = fresh ? null : store.get(DRAFT_KEY);
     cfg = draft && Array.isArray(draft.blocks) ? merge(defaults, draft) : clone(live);
     ensureIds(cfg);
-    if (draft && !isLive()) $("draft-note").classList.remove("hidden");
-    hist.last = snapshot();
+    $("draft-note").classList.toggle("hidden", !(draft && !isLive()));
+    hist.past = []; hist.future = []; hist.timer = 0; hist.last = snapshot();
+    if (fresh) { ui.open.clear(); toast(upload ? `Opened ${upload.name}` : "Back to the index.html in this folder"); }
     renderAll(); updateHistBtns(); saveDraft(); sendPreview();
   }
   function ensureIds(c) {
@@ -407,7 +486,8 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
     }
     const lab = h("span", null, label, opts.sub && h("small", null, " · " + opts.sub));
     const wrap = h("label", { class: "f" }, lab, input);
-    if (opts.insert) wrap.append(insertBar(input, obj, key));
+    const bar = opts.insert && insertBar(input, obj, key);
+    if (bar) wrap.append(bar);
     if (opts.help) wrap.append(h("p", { class: "help", text: opts.help }));
     return wrap;
   }
@@ -437,7 +517,7 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
       }
       case "heading": return [cut(b.text) || "Empty heading", "Heading"];
       case "text": return [cut(b.text) || "Empty text", { plain: "Text", muted: "Subtle text", card: "Text card", warn: "Warning card" }[b.style] || "Text"];
-      case "image": return [cut(b.alt) || (b.src ? "Image" : "Image (none chosen)"), `${b.width || 200}px · ${b.shape || "rounded"}`];
+      case "image": return [cut(b.alt) || (b.src ? "Image" : "Image (none chosen)"), `${b.width || 200}px · ${b.shape || "rounded"} · ${Object.fromEntries(IMAGE_WHERE)[b.where || "viewer"]}`];
       case "badge": return [b.icon === "emoji" ? `${b.emoji || "🐾"} emoji` : `${b.icon} icon`, "Icon badge"];
       case "divider": return ["Divider", "Line"];
       case "spacer": return [`${b.height || 16}px space`, "Spacer"];
@@ -495,7 +575,7 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
       case "field": Object.assign(b, { slot: cfg.nextSlot++, label: "New question", hint: "", placeholder: "", input: "text", maxlength: 60, show: "card", title: "New question", valueStyle: "normal", sample: "Sample answer" }); b.key = uniqueKey("question", b); break;
       case "heading": Object.assign(b, { text: "A new heading", fallback: "", size: "l", align: "center" }); break;
       case "text": Object.assign(b, { text: "Some text for finders to read.", fallback: "", style: "muted", size: "m", align: "center", title: "" }); break;
-      case "image": Object.assign(b, { src: "", alt: "", width: 200, shape: "rounded", align: "center" }); break;
+      case "image": Object.assign(b, { src: "", alt: "", width: 200, shape: "rounded", align: "center", where: "viewer" }); break;
       case "badge": Object.assign(b, { icon: "paw", emoji: "🐶", size: 76, align: "center" }); break;
       case "spacer": b.height = 24; break;
     }
@@ -534,7 +614,7 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
           const t = document.querySelector(`.blk[data-id="${b.id}"] input[data-k="title"]`); if (t) t.value = v;
         } }));
         out.push(h("div", { class: "grid2" },
-          ctl("Answer type", b, "input", { type: "select", options: INPUTS, rerender: true }),
+          ctl("Answer type", b, "input", { type: "select", options: INPUTS, rerender: true, onChange: v => { if (v === "maplink" && b.show === "line") b.show = "card"; } }),
           ["text", "textarea", "number", "tel", "email", "url"].includes(b.input) ? ctl("Max characters", b, "maxlength", { type: "number", min: 1, max: 500 }) : h("span")));
         if (b.input === "select") out.push(ctl("Choices", b, "options", { type: "textarea", sub: "one per line", placeholder: "Dog\nCat\nRabbit" }));
         out.push(ctl("Helper text", b, "hint", { placeholder: "Shown in grey after the question" }));
@@ -542,10 +622,15 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
         if (original && original.input !== b.input) out.push(h("div", { class: "note warn", text: `This input used to be "${INPUT_NAME[original.input]}". Tags already written still hold the old kind of answer, so rewrite them if it looks wrong.` }));
 
         out.push(h("p", { class: "help", style: "margin-top:16px;font-weight:600;color:var(--ink)", text: "On the finder's page" }));
-        out.push(ctl("Show it as", b, "show", { type: "select", options: [["card", "A card"], ["line", "A small line of text"], ["none", "Don't show (form only, or used inside text)"]], rerender: true }));
+        const isMap = b.input === "maplink";
+        out.push(ctl("Show it as", b, "show", { type: "select", options: isMap ? [["card", "A Directions button in a card"], ["none", "Don't show (form only)"]] : [["card", "A card"], ["line", "A small line of text"], ["none", "Don't show (form only, or used inside text)"]], rerender: true }));
         if (b.show !== "none") {
-          out.push(ctl(b.show === "line" ? "Text before the answer" : "Card title", b, "title", { placeholder: b.show === "line" ? "e.g. Born" : "e.g. My vet" }));
-          if (b.show === "card") {
+          out.push(ctl(b.show === "line" ? "Text before the answer" : "Card title", b, "title", { placeholder: b.show === "line" ? "e.g. Born" : "e.g. My vet", help: b.join && b.show === "card" ? "Leave it empty to put this row's buttons next to the buttons above." : null }));
+          if (isMap) {
+            out.push(ctl("Button text", b, "btnText", { placeholder: "Directions" }));
+            out.push(h("div", { class: "note", text: "Owners paste the clinic's link from Google Maps (Share → Copy link). A full link with the place's position starts directions straight away. A short maps.app.goo.gl share link opens the clinic in Google Maps, one tap from Directions. If the card also has a \"Find on map\" button, this button replaces it." }));
+            out.push(ctl("Put in the same card as the row above", b, "join", { type: "check" }));
+          } else if (b.show === "card") {
             out.push(h("div", { class: "grid2" }, ctl("Answer style", b, "valueStyle", { type: "select", options: [["big", "Big"], ["bold", "Bold"], ["normal", "Normal"], ["muted", "Subtle"]] }), h("span")));
             out.push(ctl("Put in the same card as the row above", b, "join", { type: "check" }));
             if (!b.join) out.push(ctl("Highlight as a warning card", b, "warn", { type: "check" }));
@@ -553,11 +638,16 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
           if (b.input === "date") out.push(ctl("Also show the age (e.g. 3 years 2 months old)", b, "age", { type: "check" }));
           if (b.input === "number") out.push(ctl("Unit after the number", b, "suffix", { placeholder: "e.g. kg" }));
           if (b.input === "tel" && b.show === "card") {
-            out.push(ctl("Show Call, WhatsApp and Text buttons", b, "actions", { type: "check", rerender: true }));
-            if (b.actions !== false) out.push(ctl("WhatsApp message", b, "waText", { insert: true, help: "Use {name|other words} to say something else when that answer is empty." }));
+            // older designs store true/false here
+            const acts = { get v() { return b.actions === false || b.actions === "none" ? "none" : b.actions === "call" ? "call" : "all"; }, set v(x) { b.actions = x; } };
+            out.push(ctl("Buttons", acts, "v", { type: "select", options: [["all", "Call, WhatsApp and Text"], ["call", "Call only"], ["none", "No buttons"]], rerender: true }));
+            if (acts.v !== "none") out.push(ctl("Call button text", b, "btnText", { placeholder: "Call" }));
+            if (acts.v === "all") out.push(ctl("WhatsApp message", b, "waText", { insert: true, help: "Use {name|other words} to say something else when that answer is empty." }));
           }
-          if (b.input === "email" && b.show === "card") out.push(ctl("Show an Email button", b, "actions", { type: "check" }));
-          if (b.input === "url" && b.show === "card") out.push(ctl("Show an Open link button", b, "actions", { type: "check" }));
+          if (b.input === "email" && b.show === "card") out.push(ctl("Show an Email button", b, "actions", { type: "check", rerender: true }));
+          if (b.input === "url" && b.show === "card") out.push(ctl("Show an Open link button", b, "actions", { type: "check", rerender: true }));
+          if (["tel", "email", "url"].includes(b.input) && b.show === "card" && b.actions !== false && b.actions !== "none")
+            out.push(ctl("Hide the answer itself, only show the buttons", b, "hideValue", { type: "check" }));
           if ((b.input === "text" || b.input === "textarea") && b.show === "card") out.push(ctl("Show a \"Find on map\" button", b, "map", { type: "check" }));
         }
 
@@ -586,6 +676,7 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
         break;
       case "image":
         out.push(imagePicker(b, "src", 900));
+        out.push(ctl("Show on", b, "where", { type: "select", options: IMAGE_WHERE, rerender: true, help: b.where === "creator" || b.where === "both" ? "On the owner form, images sit at the top, above the title, in the order they're listed here. Switch the preview to \"Owner form\" to see them." : null }));
         out.push(ctl("Description", b, "alt", { placeholder: "e.g. Mochi on the sofa", help: "Read out by screen readers, and shown if the image can't load." }));
         out.push(ctl("Width", b, "width", { type: "range", min: 40, max: 460, step: 4, unit: "px" }));
         out.push(h("div", { class: "grid2" }, ctl("Shape", b, "shape", { type: "select", options: [["rounded", "Rounded corners"], ["circle", "Circle"], ["square", "Square corners"]] }), alignCtl(b)));
@@ -715,6 +806,17 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
       ctl("Show the link at the bottom of the finder's page", cfg.footer, "show", { type: "check", rerender: true }),
       cfg.footer.show ? ctl("Link text", cfg.footer, "text") : null,
       h("p", { class: "help", text: "It links back to the owner form so finders can make their own tag." }));
+    const hp = cfg.help;
+    $("help-ctl").replaceChildren(...(!hp ? [h("p", { class: "help", style: "margin:0", text: "This index.html is an older version without a help footer. Open the latest index.html to add one." })] : [
+      h("p", { class: "help", style: "margin:0", text: "A link at the very bottom of the page, for example to your Instagram, so people can ask you for help." }),
+      ctl("Text", hp, "text", { placeholder: "Need help with your tag?" }),
+      ctl("Link text", hp, "linkText", { placeholder: "Message us on Instagram" }),
+      ctl("Link", hp, "url", { placeholder: "https://www.instagram.com/yourshop", rerender: true }),
+      hp.url && !/^(https?:\/\/)?[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(hp.url.trim())
+        ? h("div", { class: "note warn", text: "That doesn't look like a web link, so the footer stays hidden. Use something like https://www.instagram.com/yourshop" })
+        : !hp.url ? h("div", { class: "note warn", text: "Add your link to show the help footer." }) : null,
+      ctl("Show on the finder's page", hp, "viewer", { type: "check" }),
+      ctl("Show on the owner form", hp, "creator", { type: "check" })]));
   }
   function renderAll() {
     const y = document.querySelector(".side").scrollTop;
@@ -752,7 +854,7 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
     e.preventDefault(); e.shiftKey ? redo() : undo();
   });
   $("discard").onclick = () => {
-    if (!confirm("Throw away your unsaved changes and load the design that's live on the site?")) return;
+    if (!confirm("Throw away your unsaved changes and go back to the design saved in index.html?")) return;
     cfg = clone(LIVE); ensureIds(cfg); commit(); renderAll();
     $("draft-note").classList.add("hidden");
   };
@@ -761,26 +863,44 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
   // ---------------- save / publish ----------------
   const exportJson = () => JSON.stringify(cfg, null, 2) + "\n";
   const dlg = $("save-dlg");
-  $("save-open").onclick = () => { loadGh(); $("gh-status").textContent = ""; dlg.showModal(); };
-  $("save-close").onclick = () => dlg.close();
-  $("download").onclick = () => {
-    const a = h("a", { href: URL.createObjectURL(new Blob([exportJson()], { type: "application/json" })), download: "config.json" });
+  $("save-open").onclick = () => dlg.showModal();
+  function saveFile(name, text, type) {
+    const a = h("a", { href: URL.createObjectURL(new Blob([text], { type })), download: name });
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-    toast("Downloaded config.json · upload it to your repository");
+  }
+  const CONFIG_RE = /(<script type="application\/json" id="tag-config">)[\s\S]*?(<\/script>)/;
+  $("download-html").onclick = () => {
+    if (!CONFIG_RE.test(PAGE_SRC)) { toast("Couldn't read index.html. Keep editor.html next to the new index.html and reopen it."); return; }
+    // "<" is escaped so the design can never close the script tag early
+    const json = JSON.stringify(cfg).replace(/</g, "\\u003c");
+    saveFile("index.html", PAGE_SRC.replace(CONFIG_RE, (m, a, b) => a + json + b), "text/html");
+    toast("Downloaded index.html · replace your old one with it");
+  };
+  $("save-close").onclick = () => dlg.close();
+  $("download").onclick = () => {
+    saveFile("config.json", exportJson(), "application/json");
+    toast("Downloaded config.json");
   };
   $("copy-json").onclick = async () => {
-    try { await navigator.clipboard.writeText(exportJson()); toast("Copied. Paste it into config.json on GitHub"); }
+    try { await navigator.clipboard.writeText(exportJson()); toast("Copied. Paste it into config.json"); }
     catch { toast("Couldn't copy. Use Download instead."); }
   };
   $("import-file").onchange = async e => {
     const f = e.target.files[0]; e.target.value = "";
     if (!f) return;
     try {
-      const c = JSON.parse(await f.text());
+      const text = await f.text();
+      let c;
+      if (/^\s*[{[]/.test(text)) c = JSON.parse(text);
+      else {
+        const s = new DOMParser().parseFromString(text, "text/html").getElementById("tag-config");
+        if (!s || !s.textContent.trim()) { toast("That index.html has no saved design in it, so it uses the original design."); return; }
+        c = JSON.parse(s.textContent);
+      }
       if (!c || !Array.isArray(c.blocks)) throw new Error();
       cfg = merge(DEFAULTS, c); ensureIds(cfg); commit(); renderAll(); dlg.close(); toast("Opened " + f.name);
-    } catch { toast("That isn't a tag page config.json"); }
+    } catch { toast("That isn't a saved tag page design (index.html or config.json)."); }
   };
   $("reset").onclick = () => {
     if (!confirm("Go back to the original pet tag design? You can still undo this.")) return;
@@ -790,54 +910,6 @@ code{font:12px ui-monospace,Menlo,Consolas,monospace;background:var(--soft);padd
     ensureIds(cfg); commit(); renderAll(); dlg.close(); toast("Reset · Undo is at the top");
   };
 
-  function guessRepo() {
-    const m = /^([\w-]+)\.github\.io$/i.exec(location.hostname);
-    const seg = location.pathname.split("/").filter(Boolean);
-    const dir = seg.length && !/\.html?$/i.test(seg[0]) ? seg[0] : "";
-    return m ? { owner: m[1], repo: dir || `${m[1]}.github.io`, path: "config.json" } : {};
-  }
-  function loadGh() {
-    const s = Object.assign({ branch: "main", path: "config.json" }, guessRepo(), store.get(GH_KEY) || {});
-    $("gh-owner").value = s.owner || ""; $("gh-repo").value = s.repo || ""; $("gh-branch").value = s.branch || "main";
-    $("gh-path").value = s.path || "config.json"; $("gh-token").value = s.token || ""; $("gh-remember").checked = !!s.token;
-  }
-  const b64utf8 = s => { const b = new TextEncoder().encode(s); let bin = ""; for (let i = 0; i < b.length; i += 0x8000) bin += String.fromCharCode(...b.subarray(i, i + 0x8000)); return btoa(bin); };
-  $("gh-publish").onclick = async () => {
-    const st = $("gh-status"), btn = $("gh-publish");
-    const owner = $("gh-owner").value.trim(), repo = $("gh-repo").value.trim(), branch = $("gh-branch").value.trim() || "main";
-    const path = ($("gh-path").value.trim() || "config.json").replace(/^\/+/, ""), token = $("gh-token").value.trim();
-    if (!owner || !repo || !token) { st.textContent = "Fill in the owner, repository and token."; return; }
-    const keep = { owner, repo, branch, path };
-    if ($("gh-remember").checked) keep.token = token;
-    store.set(GH_KEY, keep);
-    const api = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split("/").map(encodeURIComponent).join("/")}`;
-    const headers = { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
-    btn.disabled = true; st.textContent = "Publishing…";
-    try {
-      let sha;
-      const cur = await fetch(`${api}?ref=${encodeURIComponent(branch)}`, { headers, cache: "no-store" });
-      if (cur.ok) sha = (await cur.json()).sha;
-      else if (cur.status !== 404) throw new Error(await ghError(cur));
-      const res = await fetch(api, {
-        method: "PUT", headers: { ...headers, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "Update tag page design", content: b64utf8(exportJson()), branch, ...(sha ? { sha } : {}) })
-      });
-      if (!res.ok) throw new Error(await ghError(res));
-      LIVE = clone(cfg); saveDraft(); $("draft-note").classList.add("hidden");
-      st.textContent = "✓ Published. Your page updates in about a minute.";
-      toast("Published to GitHub");
-    } catch (e) {
-      st.textContent = "Couldn't publish: " + (e.message || e);
-    } finally { btn.disabled = false; }
-  };
-  async function ghError(r) {
-    let msg = ""; try { msg = (await r.json()).message || ""; } catch { }
-    if (r.status === 401) return "the token was rejected. Check it's copied fully and hasn't expired.";
-    if (r.status === 403) return "the token isn't allowed to change this repository. Give it Contents: read and write. " + msg;
-    if (r.status === 404) return "repository or branch not found. Check the owner, repository and branch, and that the token can see this repository.";
-    if (r.status === 409 || r.status === 422) return "GitHub refused the update (" + msg + "). Try again in a moment.";
-    return `${r.status} ${msg}`;
-  }
 })();
 </script>
 </body>
